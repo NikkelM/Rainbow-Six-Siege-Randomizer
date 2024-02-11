@@ -1,6 +1,6 @@
 import random
 
-__version__ = "1.0.0"
+__version__ = "0.0.2"
 
 mapStrings = ["FIRST", "SECOND", "THIRD", "FOURTH", "FIFTH"]
 
