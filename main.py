@@ -20,6 +20,8 @@ defenders = [
 ]
 
 if __name__ == "__main__":
+    print("Welcome to the Rainbow Six Siege randomizer!\n")
+
     while True:
         print(f"Ban the {random.sample(mapStrings, k=1)[0]} map in the selection, and these operators:")
         print(f"Attack:  {random.sample(attackers, k=2)}")
@@ -37,18 +39,18 @@ if __name__ == "__main__":
         for op in defBans:
             defenders.remove(op) if op in defenders else print(f"Skipping \"{op}\", as it is not a valid defender.")
 
-        print("Starting rounds...")
+        print("Bans processed.\n\nStarting rounds...")
         while True:
-            print("a for attack, d for defense, r to reset, x to exit:")
+            print("Get operators: a for attack, d for defense, r to reset, x to exit:")
             inp = input()
-            if inp == "a":
+            if inp == "a" or inp =="A":
                 lis = random.sample(attackers, k=5)
-            elif inp == "d":
+            elif inp == "d" or inp =="D":
                 lis = random.sample(defenders, k=5)
-            elif inp == "r":
+            elif inp == "r" or inp =="R":
                 print("\n\nResetting...\n")
                 break
-            elif inp == "x":
+            elif inp == "x" or inp =="X":
                 print("Exiting...")
                 exit()
             else:
