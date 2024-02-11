@@ -25,12 +25,14 @@ jobs:
       - name: Check if version has been updated
         id: check_version
         run: |
-          VERSION=$(python -c "from main import __version__; print(__version__)")
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
-          git fetch origin ${{ github.event.before }}..${{ github.sha }}
-          if git diff --name-only ${{ github.event.before }} | grep '^main.py$'; then
+          git checkout ${{ github.event.before }}
+          OLD_VERSION=$(python -c "from main import __version__; print(__version__)")
+          git checkout ${{ github.sha }}
+          NEW_VERSION=$(python -c "from main import __version__; print(__version__)")
+          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+          if [ "$OLD_VERSION" != "$NEW_VERSION" ]; then
             echo "changed=true" >> $GITHUB_OUTPUT
-            echo "newVersion=$VERSION" >> $GITHUB_OUTPUT
+            echo "newVersion=$NEW_VERSION" >> $GITHUB_OUTPUT
           fi
 
   CreateRelease:
