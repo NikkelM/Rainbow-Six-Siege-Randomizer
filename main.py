@@ -1,7 +1,5 @@
 import random
 
-__version__ = "1.0.0"
-
 mapStrings = ["FIRST", "SECOND", "THIRD", "FOURTH", "FIFTH"]
 
 attackers = [
