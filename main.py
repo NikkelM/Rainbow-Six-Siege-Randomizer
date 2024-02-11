@@ -39,7 +39,7 @@ if __name__ == "__main__":
 
         print("Starting rounds...")
         while True:
-            print("a for attack, d for defense, r to reset map, x to exit:")
+            print("a for attack, d for defense, r to reset, x to exit:")
             inp = input()
             if inp == "a":
                 lis = random.sample(attackers, k=5)
