@@ -19,6 +19,8 @@ defenders = [
     "Fenrir", "Tubarao"
 ]
 
+sites = list(range(1, 5))
+
 if __name__ == "__main__":
     print("Welcome to the Rainbow Six Siege randomizer!\n")
 
@@ -47,6 +49,8 @@ if __name__ == "__main__":
                 lis = random.sample(attackers, k=5)
             elif inp == "d" or inp =="D":
                 lis = random.sample(defenders, k=5)
+                random.shuffle(sites)
+                print(f"Numbers 1 to 4 in random order: {sites}\n")
             elif inp == "r" or inp =="R":
                 print("\n\nResetting...\n")
                 break
