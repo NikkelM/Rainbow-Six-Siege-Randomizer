@@ -50,7 +50,7 @@ if __name__ == "__main__":
             elif inp == "d" or inp =="D":
                 lis = random.sample(defenders, k=5)
                 random.shuffle(sites)
-                print(f"Numbers 1 to 4 in random order: {sites}\n")
+                print(f"Numbers 1 to 4 in random order: {sites}")
             elif inp == "r" or inp =="R":
                 print("\n\nResetting...\n")
                 break
@@ -61,4 +61,4 @@ if __name__ == "__main__":
                 print("Invalid input.")
                 continue
             for i in range(5):
-                print(f"Player {i}: {lis[i]}")
+                print(f"Player {i+1}: {lis[i]}")
