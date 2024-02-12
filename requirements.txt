@@ -1,1 +1,2 @@
 pyinstaller
+discord.py
