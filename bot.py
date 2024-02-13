@@ -1,7 +1,6 @@
 import discord
 import os
 from discord.ext import commands
-from discord.utils import get
 from dotenv import load_dotenv
 from rainbow import Rainbow
 
@@ -151,10 +150,12 @@ async def playRound(ctx):
     if match.side == 'attack':
         operators = match.getAttackers()
     else:
+        site = match.getPlayedSite()
+        message += f'Choose site number **{site}**.\n'
         operators = match.getDefenders()
 
     for player, operator in zip(match.players, operators):
-        message += f'{player.mention} plays **{operator}**\n'
+        message += f'{player.display_name} plays **{operator}**\n'
 
     if match.currRound != 6:
         message += 'Use "**!won**" or "**!lost**" to continue.'

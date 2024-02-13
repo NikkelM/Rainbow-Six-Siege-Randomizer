@@ -30,6 +30,16 @@ class Rainbow:
     def getMapBan(self):
         mapStrings = ["FIRST", "SECOND", "THIRD", "FOURTH", "FIFTH"]
         return random.sample(mapStrings, k=1)[0]
+    
+    def getPlayedSite(self):
+        # Return a random site that hasn't been played yet
+        # Choice one to four
+        site = random.choice(self.sites)
+        self.sites.remove(site)
+        return site
+    
+    def resetSites(self):
+        self.sites = list(range(1, 5))
 
     def getOperatorBans(self):
         attBans = random.sample(self.attackers, k=2)
@@ -57,6 +67,12 @@ class Rainbow:
                 # TODO: Add a command !amendBans to add a singular new ban
             else:
                 sanitized_names.append(None)
+        
+        # Ban the operators that were matched
+        self.setBannedOperators(
+            [name for name in sanitized_names if name in self.attackers],
+            [name for name in sanitized_names if name in self.defenders]
+        )
 
         return sanitized_names
 
@@ -82,6 +98,7 @@ class Rainbow:
         if self.scores["blue"] == 3 and self.scores["red"] == 3:
             self.overtime = True
             self.setSide(overtimeSide)
+            self.resetSites()
         elif not self.overtime and (self.scores["blue"] == 4 or self.scores["red"] == 4):
             return False
         elif self.overtime and (self.scores["blue"] == 5 or self.scores["red"] == 5):
