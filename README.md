@@ -15,3 +15,11 @@ An executable can then be built with the following command:
 ```bash
 pyinstaller --onefile --name=RandomR6 --icon=R6S.ico main.py
 ```
+
+## Discord Bot
+
+You can run the Discord bot with the following command:
+
+```bash
+python bot.py
+```
