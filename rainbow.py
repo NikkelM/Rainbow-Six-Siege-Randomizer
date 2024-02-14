@@ -5,91 +5,91 @@ from fuzzywuzzy import process
 
 class Rainbow:
     def __init__(self):
-        self.attackers = [
-            "Sledge", "Thatcher", "Ash", "Thermite", "Twitch", "Montagne",
-            "Glaz", "Fuze", "Blitz", "IQ", "Buck", "Blackbeard", "Capitao",
-            "Hibana", "Jackal", "Ying", "Zofia", "Dokkaebi", "Lion", "Finka",
-            "Maverick", "Nomad", "Gridlock", "Nokk", "Amaru", "Kali", "Iana",
-            "Ace", "Zero", "Flores", "Osa", "Sens", "Grim", "Brava", "Ram"
-        ]
-        self.defenders = [
-            "Smoke", "Mute", "Castle", "Pulse", "Doc", "Rook", "Kapkan",
-            "Tachanka", "Jäger", "Bandit", "Frost", "Valkyrie", "Caveira",
-            "Echo", "Mira", "Lesion", "Ela", "Vigil", "Alibi", "Maestro",
-            "Clash", "Kaid", "Mozzie", "Warden", "Goyo", "Wamai", "Oryx",
-            "Melusi", "Aruni", "Thunderbird", "Thorn", "Azami", "Solis",
-            "Fenrir", "Tubarao"
-        ]
-        self.sites = list(range(1, 5))
+        self.attackers, self.defenders = self._getOperators().values()
+        self.sites = self._resetSites()
         self.side = None
         self.currRound = 1
         self.scores = {"blue": 0, "red": 0}
         self.overtime = False
         self.players = []
 
+    def _getOperators(self):
+        """Returns a dictionary with the list of attacker and defender operators."""
+        return {
+            "attackers": [
+                "Sledge", "Thatcher", "Ash", "Thermite", "Twitch", "Montagne",
+                "Glaz", "Fuze", "Blitz", "IQ", "Buck", "Blackbeard", "Capitão",
+                "Hibana", "Jackal", "Ying", "Zofia", "Dokkaebi", "Lion", "Finka",
+                "Maverick", "Nomad", "Gridlock", "Nøkk", "Amaru", "Kali", "Iana",
+                "Ace", "Zero", "Flores", "Osa", "Sens", "Grim", "Brava", "Ram"
+            ],
+            "defenders": [
+                "Smoke", "Mute", "Castle", "Pulse", "Doc", "Rook", "Kapkan",
+                "Tachanka", "Jäger", "Bandit", "Frost", "Valkyrie", "Caveira",
+                "Echo", "Mira", "Lesion", "Ela", "Vigil", "Alibi", "Maestro",
+                "Clash", "Kaid", "Mozzie", "Warden", "Goyo", "Wamai", "Oryx",
+                "Melusi", "Aruni", "Thunderbird", "Thorn", "Azami", "Solis",
+                "Fenrir", "Tubarão"
+            ]
+        }
+
+    def _resetSites(self):
+        """Returns a list of site choices, between 1-4."""
+        return list(range(1, 5))
+
     def getMapBan(self):
+        """Returns a choice of map that should be banned."""
         mapStrings = ["FIRST", "SECOND", "THIRD", "FOURTH", "FIFTH"]
         return random.sample(mapStrings, k=1)[0]
-    
+
     def getPlayedSite(self):
-        # Return a random site that hasn't been played yet
-        # Choice one to four
+        """Returns a choice of site that should be played, and removes the choice from the pool."""
         site = random.choice(self.sites)
         self.sites.remove(site)
         return site
-    
-    def resetSites(self):
-        self.sites = list(range(1, 5))
 
-    def getOperatorBans(self):
+    def getOperatorBanChoices(self):
+        """Returns a choice of operators that should be banned, two for each side (main and backup)."""
         attBans = random.sample(self.attackers, k=2)
         defBans = random.sample(self.defenders, k=2)
         return attBans, defBans
 
-    def setBannedOperators(self, attBans, defBans):
-        for op in attBans:
-            self.attackers.remove(op)
-        for op in defBans:
-            self.defenders.remove(op)
-
-    def matchOperatorNames(self, input_string):
-        # Split the input string into words using non-alphanumeric characters followed by zero or more spaces as separators
+    def banOperators(self, input_string):
+        """Removes the given operators from the list of available operators, and returns the sanitized list of operators."""
         input_names = re.split(r'\W+\s*', input_string)
 
-        # Use fuzzy matching to find the closest match for each input name in the operator list
         sanitized_names = []
         for name in input_names:
             match, score = process.extractOne(
                 name, self.attackers + self.defenders)
             if score >= 60:
                 sanitized_names.append(match)
-                # TODO: Return a None or a special value for names that don't match, so the bot can say he didn't understand
                 # TODO: Add a command !amendBans to add a singular new ban
             else:
                 sanitized_names.append(None)
-        
-        # Ban the operators that were matched
-        self.setBannedOperators(
-            [name for name in sanitized_names if name in self.attackers],
-            [name for name in sanitized_names if name in self.defenders]
-        )
+
+        for op in sanitized_names:
+            if op in self.attackers:
+                self.attackers.remove(op)
+            else:
+                self.defenders.remove(op)
 
         return sanitized_names
 
     def setPlayerNames(self, playerNames):
+        """Sets the players in the current match."""
         self.players = playerNames
 
-    def setSide(self, side):
-        self.side = side
-
     def getAttackers(self):
+        """Returns a list of attackers, one for each player in the match."""
         return random.sample(self.attackers, k=len(self.players))
 
     def getDefenders(self):
+        """Returns a list of defenders, one for each player in the match."""
         return random.sample(self.defenders, k=len(self.players))
 
-    # Returns False if the match is over, True otherwise
     def resolveRound(self, result, overtimeSide):
+        """Resolves the round, updating the scores and the side, and returns True if the match is still ongoing."""
         if result == "won":
             self.scores["blue"] += 1
         else:
@@ -97,8 +97,8 @@ class Rainbow:
 
         if self.scores["blue"] == 3 and self.scores["red"] == 3:
             self.overtime = True
-            self.setSide(overtimeSide)
-            self.resetSites()
+            self.side = overtimeSide
+            self.sites = self._resetSites()
         elif not self.overtime and (self.scores["blue"] == 4 or self.scores["red"] == 4):
             return False
         elif self.overtime and (self.scores["blue"] == 5 or self.scores["red"] == 5):
@@ -106,6 +106,6 @@ class Rainbow:
 
         self.currRound += 1
         if self.currRound == 4 or self.currRound > 7:
-            self.setSide("attack" if self.side == "defense" else "defense")
+            self.side = "attack" if self.side == "defense" else "defense"
 
         return True
