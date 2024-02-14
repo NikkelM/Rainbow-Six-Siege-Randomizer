@@ -24,13 +24,9 @@ class RainbowBot(commands.Bot):
     def setup_bot_commands(self):
         @self.command(name='startMatch')
         async def _startMatch(ctx, *playerNames: discord.Member):
-            # TODO: If a map is already running, ask if they really want to reset
-            # TODO: Offer a flag that skips confirmation
             message = ''
             self.match = RainbowMatch()
 
-            # If any amount of players is given, validate and set in the match object
-            # Else, tell the user to set the players using !startMatch @playerNames
             if len(playerNames) > 0:
                 if self.validatePlayerNames(ctx, playerNames):
                     self.match.setPlayerNames(playerNames)
