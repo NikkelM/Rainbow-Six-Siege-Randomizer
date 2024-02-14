@@ -3,7 +3,7 @@ import re
 from fuzzywuzzy import process
 
 
-class Rainbow:
+class RainbowMatch:
     def __init__(self):
         self.attackers, self.defenders = self._getOperators().values()
         self.sites = self._resetSites()
