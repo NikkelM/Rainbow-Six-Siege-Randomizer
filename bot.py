@@ -44,8 +44,8 @@ class RainbowBot(commands.Bot):
             attBans, defBans = self.match.getOperatorBanChoices()
             att1, att2 = attBans
             def1, def2 = defBans
-            message += f'Attack: **{att1}** or alternatively **{att2}**\n'
-            message += f'Defense: **{def1}** or alternatively **{def2}**\n'
+            message += f'Attack:  **{att1}** or if banned **{att2}**\n'
+            message += f'Defense: **{def1}** or if banned **{def2}**\n'
 
             message += '\nNext, tell me the "**!bans firstOp secondOp...**":'
 
@@ -100,6 +100,7 @@ class RainbowBot(commands.Bot):
                 if len(unrecognized_bans) > 0:
                     message += f'The following operators you passed were not recognized:\n{", ".join([f"**{ban[1]}**" for ban in unrecognized_bans])}\n'
 
+            message += 'Use "**!startAttack**" or "**!startDefense**" to start the match.'
             await ctx.send(message)
 
 
