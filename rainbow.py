@@ -8,6 +8,7 @@ class RainbowMatch:
         self.attackers, self.defenders = self._getOperators().values()
         self.sites = self._resetSites()
         self.playingOnSide = None
+        self.currSite = None
         self.currRound = 1
         self.scores = {"blue": 0, "red": 0}
         self.overtime = False
@@ -44,9 +45,8 @@ class RainbowMatch:
 
     def getPlayedSite(self):
         """Returns a choice of site that should be played, and removes the choice from the pool."""
-        site = random.choice(self.sites)
-        self.sites.remove(site)
-        return site
+        self.currSite = random.choice(self.sites)
+        return self.currSite
 
     def getOperatorBanChoices(self):
         """Returns a choice of operators that should be banned, two for each side (main and backup)."""
@@ -94,6 +94,8 @@ class RainbowMatch:
         """Resolves the round, updating the scores and the side, and returns True if the match is still ongoing."""
         if result == "won":
             self.scores["blue"] += 1
+            if self.playingOnSide == "defense":
+                self.sites.remove(self.currSite)
         else:
             self.scores["red"] += 1
 
