@@ -67,16 +67,14 @@ class RainbowMatch:
                 name, self.attackers + self.defenders)
             if score >= 60:
                 sanitized_names.append(match)
-                # TODO: Add a command !amendBans to add a singular new ban
             else:
                 sanitized_names.append(None)
 
         for op in sanitized_names:
-            if op is not None:
-                if op in self.attackers:
-                    self.attackers.remove(op)
-                else:
-                    self.defenders.remove(op)
+            if op in self.attackers:
+                self.attackers.remove(op)
+            elif op in self.defenders:
+                self.defenders.remove(op)
 
         return sanitized_names
 

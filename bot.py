@@ -69,7 +69,7 @@ class RainbowBot(commands.Bot):
             sanitized_bans = self.match.banOperators(bans)
 
             if len(sanitized_bans) == 0:
-                message += 'No operator are banned in this match.\n'
+                message += 'No operators are banned in this match.\n'
             else:
                 bans = ', '.join(f'**{ban}**' for ban in sanitized_bans if ban is not None)
                 message = f'The following operators are banned in this match:\n{bans}\n'
@@ -77,7 +77,29 @@ class RainbowBot(commands.Bot):
                 if len(unrecognized_bans) > 0:
                     message += f'The following operators you passed were not recognized:\n{", ".join([f"**{ban[1]}**" for ban in unrecognized_bans])}\n'
 
+            message += 'Use "**!addBans**" to add new bans.\n'
             message += 'Use "**!startAttack**" or "**!startDefense**" to start the match.'
+            await ctx.send(message)
+
+        @self.command(name='addBans')
+        async def _bans(ctx, *args):
+            if self.match == None:
+                await ctx.send('No match in progress. Use "**!startMatch**" to start a new match.')
+                return
+
+            message = ''
+            bans = ' '.join(args[0:4])
+            sanitized_bans = self.match.banOperators(bans)
+
+            if len(sanitized_bans) == 0:
+                message += 'No operators were passed with the command.\n'
+            else:
+                bans = ', '.join(f'**{ban}**' for ban in sanitized_bans if ban is not None)
+                message = f'The following operators are now **also** banned in this match:\n{bans}\n'
+                unrecognized_bans = [ban for ban in zip(sanitized_bans, args) if ban[0] is None]
+                if len(unrecognized_bans) > 0:
+                    message += f'The following operators you passed were not recognized:\n{", ".join([f"**{ban[1]}**" for ban in unrecognized_bans])}\n'
+
             await ctx.send(message)
 
 
