@@ -1,1 +1,4 @@
 pyinstaller
+discord.py
+fuzzywuzzy
+python-Levenshtein
