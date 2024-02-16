@@ -36,7 +36,7 @@ class RainbowMatch:
 
     def _resetSites(self):
         """Returns a list of site choices, between 1-4."""
-        return list(range(1, 5))
+        return ["FIRST", "SECOND", "THIRD", "FOURTH"]
 
     def getMapBan(self):
         """Returns a choice of map that should be banned."""
@@ -65,7 +65,7 @@ class RainbowMatch:
         for name in input_names:
             match, score = process.extractOne(
                 name, self.attackers + self.defenders)
-            if score >= 60:
+            if score >= 75:
                 sanitized_names.append(match)
             else:
                 sanitized_names.append(None)
