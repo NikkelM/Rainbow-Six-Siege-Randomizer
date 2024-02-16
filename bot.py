@@ -64,10 +64,19 @@ class RainbowBot(commands.Bot):
                 await ctx.send('No match in progress. Use "**!startMatch**" to start a new match.')
                 return
 
+            message = ''
             bans = ' '.join(args[0:4])
-            bans = ', '.join(f'**{ban}**' for ban in self.match.banOperators(bans))
+            sanitized_bans = self.match.banOperators(bans)
 
-            message = f'The following operators are banned in this match:\n{bans}\n'
+            if len(sanitized_bans) == 0:
+                message += 'No operator are banned in this match.\n'
+            else:
+                bans = ', '.join(f'**{ban}**' for ban in sanitized_bans if ban is not None)
+                message = f'The following operators are banned in this match:\n{bans}\n'
+                unrecognized_bans = [ban for ban in zip(sanitized_bans, args) if ban[0] is None]
+                if len(unrecognized_bans) > 0:
+                    message += f'The following operators you passed were not recognized:\n{", ".join([f"**{ban[1]}**" for ban in unrecognized_bans])}\n'
+
             message += 'Use "**!startAttack**" or "**!startDefense**" to start the match.'
             await ctx.send(message)
 
@@ -128,9 +137,9 @@ class RainbowBot(commands.Bot):
             return
 
         if side == 'attack':
-            self.match.setSide('attack')
+            self.match.playingOnSide = 'attack'
         else:
-            self.match.setSide('defense')
+            self.match.playingOnSide = 'defense'
 
         message = f'You are starting on **{side}**.'
         await ctx.send(message)
@@ -142,7 +151,7 @@ class RainbowBot(commands.Bot):
         message = f'The current score is **{self.match.scores["blue"]}**:**{self.match.scores["red"]}**.\n'
         message += f'Here is your lineup for round {self.match.currRound}:\n'
 
-        if self.match.side == 'attack':
+        if self.match.playingOnSide == 'attack':
             operators = self.match.getAttackers()
         else:
             site = self.match.getPlayedSite()
