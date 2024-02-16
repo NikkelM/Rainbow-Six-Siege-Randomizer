@@ -7,7 +7,7 @@ class RainbowMatch:
     def __init__(self):
         self.attackers, self.defenders = self._getOperators().values()
         self.sites = self._resetSites()
-        self.side = None
+        self.playingOnSide = None
         self.currRound = 1
         self.scores = {"blue": 0, "red": 0}
         self.overtime = False
@@ -58,6 +58,9 @@ class RainbowMatch:
         """Removes the given operators from the list of available operators, and returns the sanitized list of operators."""
         input_names = re.split(r'\W+\s*', input_string)
 
+        if not input_names or all(name == '' for name in input_names):
+            return []
+
         sanitized_names = []
         for name in input_names:
             match, score = process.extractOne(
@@ -69,10 +72,11 @@ class RainbowMatch:
                 sanitized_names.append(None)
 
         for op in sanitized_names:
-            if op in self.attackers:
-                self.attackers.remove(op)
-            else:
-                self.defenders.remove(op)
+            if op is not None:
+                if op in self.attackers:
+                    self.attackers.remove(op)
+                else:
+                    self.defenders.remove(op)
 
         return sanitized_names
 
@@ -97,7 +101,7 @@ class RainbowMatch:
 
         if self.scores["blue"] == 3 and self.scores["red"] == 3:
             self.overtime = True
-            self.side = overtimeSide
+            self.playingOnSide = overtimeSide
             self.sites = self._resetSites()
         elif not self.overtime and (self.scores["blue"] == 4 or self.scores["red"] == 4):
             return False
@@ -106,6 +110,6 @@ class RainbowMatch:
 
         self.currRound += 1
         if self.currRound == 4 or self.currRound > 7:
-            self.side = "attack" if self.side == "defense" else "defense"
+            self.playingOnSide = "attack" if self.playingOnSide == "defense" else "defense"
 
         return True
