@@ -18,6 +18,7 @@ class RainbowBot(commands.Bot):
 
     def __init__(self):
         self.match = None
+        self.matchMessage = None
 
         intents = discord.Intents.default()
         intents.members = True
@@ -42,11 +43,11 @@ class RainbowBot(commands.Bot):
                     message += f"Starting a new match with {', '.join([player.mention for player in playerNames])}.\n"
                 else:
                     message += 'At least one of the players you mentioned is not on this server, please try again.'
-                    await ctx.send(message)
+                    await bot.sendMessage(ctx, message)
                     return
             else:
                 message += 'No players set. Use "**!startMatch @player1 @player2...**" to set players.'
-                await ctx.send(message)
+                await bot.sendMessage(ctx, message)
                 return
 
             message += f'Ban the **{self.match.getMapBan()}** map in rotation, and these operators:\n'
@@ -58,19 +59,21 @@ class RainbowBot(commands.Bot):
 
             message += '\nNext, tell me the "**!bans firstOp secondOp...**":'
 
-            await ctx.send(message)
+            await bot.sendMessage(ctx, message)
             await bot.setBotActivity('matchInProgress')
 
         @_startMatch.error
-        async def startMatch_error(ctx, error):
+        async def _startMatch_error(ctx, error):
             if isinstance(error, commands.BadArgument):
                 await bot.setBotActivity('idle')
-                await ctx.send('All players must be mentioned directly using the @ syntax and be users on this server, please try again.')
+                message = 'All players must be mentioned directly using the @ syntax and be users on this server, please try again.'
+                await bot.sendMessage(ctx, message)
 
         @self.command(name='bans')
         async def _bans(ctx, *args):
             if self.match == None:
-                await ctx.send('No match in progress. Use "**!startMatch**" to start a new match.')
+                message = 'No match in progress. Use "**!startMatch**" to start a new match.'
+                await bot.sendMessage(ctx, message)
                 return
 
             message = ''
@@ -90,12 +93,13 @@ class RainbowBot(commands.Bot):
 
             message += 'Use "**!addBans**" to add new bans.\n'
             message += 'Use "**!startAttack**" or "**!startDefense**" to start the match.'
-            await ctx.send(message)
+            await bot.sendMessage(ctx, message)
 
         @self.command(name='addBans')
         async def _bans(ctx, *args):
             if self.match == None:
-                await ctx.send('No match in progress. Use "**!startMatch**" to start a new match.')
+                message = 'No match in progress. Use "**!startMatch**" to start a new match.'
+                await bot.sendMessage(ctx, message)
                 return
 
             message = ''
@@ -114,7 +118,7 @@ class RainbowBot(commands.Bot):
                     message += f'The following operators you passed were not recognized:\n{", ".join([f"**{ban[1]}**" for ban in unrecognized_bans])}\n'
 
             message += 'Use "**!startAttack**" or "**!startDefense**" to start the match.'
-            await ctx.send(message)
+            await bot.sendMessage(ctx, message)
 
         @self.command(name='startAttack')
         async def startAttack(ctx):
@@ -129,7 +133,8 @@ class RainbowBot(commands.Bot):
             if (self.match.currRound == 6 and self.match.scores["red"] == 3):
                 await bot.setBotActivity('overtime')
                 if not overtimeSide:
-                    await ctx.send('You must specify what side you start overtime on. Use **!won attack** or **!won defense**.')
+                    message = 'You must specify what side you start overtime on. Use **!won attack** or **!won defense**.'
+                    await bot.sendMessage(ctx, message)
                     return
             if self.match.resolveRound('won', overtimeSide):
                 await self.playRound(ctx)
@@ -142,7 +147,8 @@ class RainbowBot(commands.Bot):
             if (self.match.currRound == 6 and self.match.scores["blue"] == 3):
                 await bot.setBotActivity('overtime')
                 if not overtimeSide:
-                    await ctx.send('You must specify what side you start overtime on. Use **!lost attack** or **!lost defense**.')
+                    message = 'You must specify what side you start overtime on. Use **!lost attack** or **!lost defense**.'
+                    await bot.sendMessage(ctx, message)
                     return
             if self.match.resolveRound('lost', overtimeSide):
                 await self.playRound(ctx)
@@ -152,8 +158,6 @@ class RainbowBot(commands.Bot):
 
         @self.command(name='another')
         async def anotherMatch(ctx):
-            message = 'Starting another match with the same players.\n'
-            await ctx.send(message)
             await _startMatch(ctx, *self.match.players)
 
         @self.command(name='goodnight')
@@ -164,7 +168,9 @@ class RainbowBot(commands.Bot):
                 message += 'better to end on a high note!'
             else:
                 message += 'it\'s not going anywhere, let\'s call it a night.'
-            await ctx.send(message)
+            await bot.sendMessage(ctx, message)
+            bot.match = None
+            bot.matchMessage = None
             await bot.setBotActivity('idle')
 
     async def setBotActivity(self, state):
@@ -172,16 +178,14 @@ class RainbowBot(commands.Bot):
 
     async def playMatch(self, ctx, side):
         if self.match == None:
-            await ctx.send('No match in progress. Use "**!startMatch**" to start a new match.')
+            message = 'No match in progress. Use "**!startMatch**" to start a new match.'
+            await bot.sendMessage(ctx, message)
             return
 
         if side == 'attack':
             self.match.playingOnSide = 'attack'
         else:
             self.match.playingOnSide = 'defense'
-
-        message = f'You are starting on **{side}**.'
-        await ctx.send(message)
 
         await self.playRound(ctx)
 
@@ -206,12 +210,13 @@ class RainbowBot(commands.Bot):
         elif self.match.scores["blue"] == 3:
             message += 'If you lost, use "**!lost attack**" (or "**!lost defense**") to start overtime on the specified side, otherwise use **!won** to end the match.'
 
-        await ctx.send(message)
+        await bot.sendMessage(ctx, message)
 
     async def endMatch(self, ctx):
         message = f'The match is over! The final score was **{self.match.scores["blue"]}**:**{self.match.scores["red"]}**. '
         message += 'Use "**!another**" to start a new match with the same players or "**!goodnight**" to end the session.'
-        await ctx.send(message)
+        await bot.sendMessage(ctx, message)
+        self.matchMessage = None
 
     def validatePlayerNames(self, ctx, playerNames):
         members = ctx.guild.members
@@ -223,6 +228,12 @@ class RainbowBot(commands.Bot):
                 return False
 
         return True
+    
+    async def sendMessage(self, ctx, message):
+        if self.matchMessage:
+            await self.matchMessage.edit(content=message)
+        else:
+            self.matchMessage = await ctx.send(message)
 
 
 if __name__ == "__main__":
