@@ -71,10 +71,75 @@ class RainbowMatch:
         """Resets the sites for the current map."""
         return self._getMap(self.map)[1] if self.map else ['FIRST', 'SECOND', 'THIRD', 'FOURTH']
 
+    def setPlayers(self, playerNames):
+        """Sets the players in the current match."""
+        playerNames = list(set(playerNames))
+        self.players = sorted(playerNames, key=lambda player: player.nick if player.nick else (player.global_name if player.global_name else player.name))
+        
+        self.constructPlayersString()
+
+    def removePlayers(self, playerNames):
+        """Removes the given players from the list of players."""
+        originalPlayers = self.players.copy()
+        for player in playerNames:
+            if player in self.players:
+                self.players.remove(player)
+
+        if len(self.players) == 0:
+            self.players = originalPlayers
+            return False
+        
+        self.constructPlayersString()
+        return True
+
+    def constructPlayersString(self):
+        """Constructs the string of players for the current match."""
+        players = [player.mention for player in self.players]
+        if len(players) > 1:
+            lastTwoPlayers = ' and '.join(players[-2:])
+            otherPlayers = players[:-2]
+            playersString = ', '.join(otherPlayers + [lastTwoPlayers])
+        else:
+            playersString = players[0] if players else ''
+        self.playersString = playersString
+
     def getMapBan(self):
         """Returns a choice of map that should be banned."""
         mapStrings = ["FIRST", "SECOND", "THIRD", "FOURTH", "FIFTH"]
         return random.sample(mapStrings, k=1)[0]
+
+    def getOperatorBanChoices(self):
+        """Returns a choice of operators that should be banned, two for each side (main and backup)."""
+        attBans = random.sample(self.attackers, k=2)
+        defBans = random.sample(self.defenders, k=2)
+        return attBans, defBans
+
+    def banOperators(self, inputString, ban=True):
+        """Removes the given operators from the list of available operators, and returns the sanitized list of operators."""
+        input_names = re.split(r'\W+\s*', inputString)
+
+        if not input_names or all(name == '' for name in input_names):
+            return []
+
+        sanitized_names = []
+        for name in input_names:
+            match, score = process.extractOne(name, self.attackers + self.defenders) if ban else process.extractOne(name, self.bannedOperators)
+            if score >= 75:
+                sanitized_names.append(match)
+            else:
+                sanitized_names.append(None)
+
+        for op in sanitized_names:
+            if ban:
+                if op in self.attackers:
+                    self.bannedOperators.append(op)
+                elif op in self.defenders:
+                    self.bannedOperators.append(op)
+            else:
+                if op in self.bannedOperators:
+                    self.bannedOperators.remove(op)
+
+        return sanitized_names
 
     def setMap(self, map):
         """Sets the map for the current match."""
@@ -101,73 +166,8 @@ class RainbowMatch:
         self.currSite = random.choice(self.sites)
         return self.currSite
 
-    def getOperatorBanChoices(self):
-        """Returns a choice of operators that should be banned, two for each side (main and backup)."""
-        attBans = random.sample(self.attackers, k=2)
-        defBans = random.sample(self.defenders, k=2)
-        return attBans, defBans
-
-    def banOperators(self, input_string, ban=True):
-        """Removes the given operators from the list of available operators, and returns the sanitized list of operators."""
-        input_names = re.split(r'\W+\s*', input_string)
-
-        if not input_names or all(name == '' for name in input_names):
-            return []
-
-        sanitized_names = []
-        for name in input_names:
-            match, score = process.extractOne(name, self.attackers + self.defenders) if ban else process.extractOne(name, self.bannedOperators)
-            if score >= 75:
-                sanitized_names.append(match)
-            else:
-                sanitized_names.append(None)
-
-        for op in sanitized_names:
-            if ban:
-                if op in self.attackers:
-                    self.bannedOperators.append(op)
-                elif op in self.defenders:
-                    self.bannedOperators.append(op)
-            else:
-                if op in self.bannedOperators:
-                    self.bannedOperators.remove(op)
-
-        return sanitized_names
-
-    def setPlayers(self, playerNames):
-        """Sets the players in the current match."""
-        playerNames = list(set(playerNames))
-        self.players = sorted(playerNames, key=lambda player: player.nick if player.nick else (player.global_name if player.global_name else player.name))
-        
-        self.constructPlayersString()
-    
-    def removePlayers(self, playerNames):
-        """Removes the given players from the list of players."""
-        originalPlayers = self.players.copy()
-        for player in playerNames:
-            if player in self.players:
-                self.players.remove(player)
-
-        if len(self.players) == 0:
-            self.players = originalPlayers
-            return False
-        
-        self.constructPlayersString()
-        return True
-    
-    def constructPlayersString(self):
-        """Constructs the string of players for the current match."""
-        players = [player.mention for player in self.players]
-        if len(players) > 1:
-            lastTwoPlayers = ' and '.join(players[-2:])
-            otherPlayers = players[:-2]
-            playersString = ', '.join(otherPlayers + [lastTwoPlayers])
-        else:
-            playersString = players[0] if players else ''
-        self.playersString = playersString
-
     def getPlayedOperators(self, side):
-        """Returns a list of operators for the specified side, excluding any banned operators."""
+        """Returns a random list of operators for the specified side, excluding any banned operators."""
         available_operators = [op for op in (self.attackers if side == "attack" else self.defenders) if op not in self.bannedOperators]
         return random.sample(available_operators, k=min(5, len(available_operators)))
 
