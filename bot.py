@@ -120,6 +120,11 @@ class RainbowBot(commands.Bot):
         @self.command(name='won')
         async def _won(ctx, overtimeSide=None):
             await ctx.message.delete()
+            if not self.match.playingOnSide:
+                self.messageContent['actionPrompt'] = 'You must specify what side you start on. Use **!startAttack** or **!startDefense**.'
+                await bot.sendMessage(ctx)
+                return
+
             if (self.match.currRound == 6 and self.match.scores["red"] == 3):
                 await bot.setBotActivity('overtime')
                 if not overtimeSide:
@@ -135,6 +140,11 @@ class RainbowBot(commands.Bot):
         @self.command(name='lost')
         async def _lost(ctx, overtimeSide=None):
             await ctx.message.delete()
+            if not self.match.playingOnSide:
+                self.messageContent['actionPrompt'] = 'You must specify what side you start on. Use **!startAttack** or **!startDefense**.'
+                await bot.sendMessage(ctx)
+                return
+
             if (self.match.currRound == 6 and self.match.scores["blue"] == 3):
                 await bot.setBotActivity('overtime')
                 if not overtimeSide:
@@ -156,6 +166,8 @@ class RainbowBot(commands.Bot):
 
         @self.command(name='goodnight')
         async def _goodnight(ctx):
+            self.messageContent['roundMetadata'] = ''
+            self.messageContent['roundLineup'] = ''
             self.messageContent['matchMetadata'] = 'Ending the session here... '
             # If we lost or won, add to the message
             if self.match.scores["blue"] > self.match.scores["red"]:
