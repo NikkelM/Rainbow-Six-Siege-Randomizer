@@ -48,13 +48,13 @@ class RainbowBot(commands.Bot):
                 playerObjects = self.validatePlayerNames(ctx, playerNames)
                 if playerObjects is not None:
                     self.match.setPlayers(playerObjects)
-                    self.messageContent['playersBanner'] = f"Starting a new match with {self.match.playersString}.\n"
+                    self.messageContent['playersBanner'] = f"Starting a new match with {self.match.playersString}{' on **' + self.match.map + '**' if self.match.map else ''}.\n"
                 else:
                     self.messageContent['playersBanner'] = 'At least one of the players you mentioned is not on this server, please try again.'
                     await bot.sendMessage(ctx)
                     return
             else:
-                self.messageContent['playersBanner'] = 'No players set. Use "**!startMatch @player1 @player2...**" to set players.'
+                self.messageContent['playersBanner'] = 'You can start a match using "**!startMatch @player1 @player2...**".'
                 await bot.sendMessage(ctx)
                 return
 
@@ -62,10 +62,10 @@ class RainbowBot(commands.Bot):
             attBans, defBans = self.match.getOperatorBanChoices()
             att1, att2 = attBans
             def1, def2 = defBans
-            self.messageContent['matchMetadata'] += f'Attack:  **{att1}** or if banned **{att2}**\n'
+            self.messageContent['matchMetadata'] += f'Attack:    **{att1}** or if banned **{att2}**\n'
             self.messageContent['matchMetadata'] += f'Defense: **{def1}** or if banned **{def2}**\n'
 
-            self.messageContent['actionPrompt'] = 'Next, tell me the "**!ban op1 op2...**":'
+            self.messageContent['actionPrompt'] = 'Next, use "**!setMap map**" and "**!ban op1 op2...**"'
 
             await bot.sendMessage(ctx)
             await bot.setBotActivity('matchInProgress')
@@ -130,6 +130,33 @@ class RainbowBot(commands.Bot):
         async def _unban(ctx, *args):
             await self.banUnban(ctx, *args, ban=False)
 
+        @self.command(name='setMap')
+        async def _setMap(ctx, *mapName):
+            mapName = ' '.join(mapName)
+            await ctx.message.delete()
+
+            if self.match == None:
+                self.messageContent['playersBanner'] = 'No match in progress. Use "**!startMatch**" to start a new match.'
+                await bot.sendMessage(ctx, False)
+                return
+            self.messageContent['actionPrompt'] = ''
+            couldSetMap = self.match.setMap(mapName)
+            if couldSetMap == 2:
+                self.messageContent['playersBanner'] = f"Playing a match with {self.match.playersString}{' on **' + self.match.map + '**' if self.match.map else ''}.\n"
+            elif couldSetMap == 1:
+                self.messageContent['actionPrompt'] += f'**{mapName}** is not a valid map. Use "**!setMap map**" to try again.\n'
+            else:
+                self.messageContent['actionPrompt'] += f'A map has already been set, you cannot change it anymore. Use "**!another**" to restart the match.\n'
+
+            if self.match.currRound == 0:
+                if not self.match.bannedOperators:
+                    self.messageContent['actionPrompt'] += 'Use "**!ban op1 op2...**" or use "**!startAttack**" or "**!startDefense**" to start the match.'
+                else:
+                    self.messageContent['actionPrompt'] += 'Use "**!startAttack**" or "**!startDefense**" to start the match.'
+            else:
+                self.messageContent['actionPrompt'] += 'Use "**!won**" or "**!lost**" to continue.'
+            await bot.sendMessage(ctx)
+
         @self.command(name='startAttack')
         async def _startAttack(ctx):
             await ctx.message.delete()
@@ -189,7 +216,8 @@ class RainbowBot(commands.Bot):
 
         @self.command(name='goodnight')
         async def _goodnight(ctx):
-            self.messageContent['playersBanner'] = f"Finished a match with {self.match.playersString}.\n"
+            await ctx.message.delete()
+            self.messageContent['playersBanner'] = f"Finished a match with {self.match.playersString}{' on **' + self.match.map + '**' if self.match.map else ''}.\n"
             self.messageContent['roundMetadata'] = ''
             self.messageContent['roundLineup'] = ''
             self.messageContent['matchMetadata'] = 'Ending the session here... '
@@ -216,7 +244,7 @@ class RainbowBot(commands.Bot):
             await bot.sendMessage(ctx, False)
             return
         
-        self.messageContent['playersBanner'] = f"Playing a match with {self.match.playersString}.\n"
+        self.messageContent['playersBanner'] = f"Playing a match with {self.match.playersString}{' on **' + self.match.map + '**' if self.match.map else ''}.\n"
         self.messageContent['matchMetadata'] = ''
         
         if side == 'attack':
@@ -245,18 +273,24 @@ class RainbowBot(commands.Bot):
             self.messageContent['matchMetadata'] = f'The following operators are banned in this match:\n{", ".join([f"**{op}**" for op in self.match.bannedOperators])}\n'
             unrecognized_bans = [ban for ban in zip(sanitized_bans, args) if ban[0] is None]
             if len(unrecognized_bans) > 0:
-                self.messageContent['matchMetadata'] += f'The following operators you passed were not recognized:\n{", ".join([f"**{ban[1]}**" for ban in unrecognized_bans])}\n'
+                if ban:
+                    self.messageContent['matchMetadata'] += f'The following operators were not recognized:\n{", ".join([f"**{ban[1]}**" for ban in unrecognized_bans])}\n'
+                else:
+                    self.messageContent['matchMetadata'] += f'The following operators were not recognized, or not banned:\n{", ".join([f"**{ban[1]}**" for ban in unrecognized_bans])}\n'
 
         if self.match.currRound == 0:
-            self.messageContent['actionPrompt'] = 'Use "**!ban**" to add new bans, or "**!unban**" to unban operators.\n'
+            self.messageContent['actionPrompt'] = ''
+            if not self.match.map:
+                self.messageContent['actionPrompt'] += 'Next, use "**!setMap map**" to set the map.\n'
+            self.messageContent['actionPrompt'] += 'You can also "**!ban**" or "**!unban**" more operators.\n'
             self.messageContent['actionPrompt'] += 'Use "**!startAttack**" or "**!startDefense**" to start the match.'
         else:
             self.messageContent['actionPrompt'] = 'Use "**!won**" or "**!lost**" to continue.'
         await bot.sendMessage(ctx)
 
     async def playRound(self, ctx):
-        self.messageContent['playersBanner'] = f"Playing a match with {self.match.playersString}.\n"
-        self.messageContent['matchScore'] = f'The current score is **{self.match.scores["blue"]}**:**{self.match.scores["red"]}**.\n'
+        self.messageContent['playersBanner'] = f"Playing a match with {self.match.playersString}{' on **' + self.match.map + '**' if self.match.map else ''}.\n"
+        self.messageContent['matchScore'] = f'The score is **{self.match.scores["blue"]}**:**{self.match.scores["red"]}**, we are playing on **{self.match.playingOnSide}**.\n'
         self.messageContent['roundMetadata'] = f'Here is your lineup for round {self.match.currRound}:'
 
         operators = self.match.getPlayedOperators(self.match.playingOnSide)
@@ -284,7 +318,7 @@ class RainbowBot(commands.Bot):
     async def endMatch(self, ctx):
         self.messageContent['roundMetadata'] = ''
         self.messageContent['roundLineup'] = ''
-        self.messageContent['playersBanner'] = f"Finished a match with {self.match.playersString}.\n"
+        self.messageContent['playersBanner'] = f"Finished a match with {self.match.playersString}{' on **' + self.match.map + '**' if self.match.map else ''}.\n"
         self.messageContent['matchScore'] = f'The match is over! The final score was **{self.match.scores["blue"]}**:**{self.match.scores["red"]}**.'
         self.messageContent['actionPrompt'] = 'Use "**!another**" to start a new match with the same players or "**!goodnight**" to end the session.'
         await bot.sendMessage(ctx)
