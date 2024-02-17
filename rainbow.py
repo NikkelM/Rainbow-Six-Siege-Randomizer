@@ -80,7 +80,15 @@ class RainbowMatch:
 
     def setPlayerNames(self, playerNames):
         """Sets the players in the current match."""
-        self.players = playerNames
+        self.players = sorted(playerNames, key=lambda player: player.nick if player.nick else (player.global_name if player.global_name else player.name))
+        players = [player.mention for player in self.players]
+        if len(players) > 1:
+            lastTwoPlayers = ' and '.join(players[-2:])
+            otherPlayers = players[:-2]
+            playersString = ', '.join(otherPlayers + [lastTwoPlayers])
+        else:
+            playersString = players[0] if players else ''
+        self.playersString = playersString
 
     def getAttackers(self):
         """Returns a list of attackers, one for each player in the match."""

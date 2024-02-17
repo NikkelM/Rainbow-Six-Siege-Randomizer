@@ -1,12 +1,12 @@
 import discord
 import os
+import re
 from discord.ext import commands
 from dotenv import load_dotenv
 from rainbow import RainbowMatch
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_BOT_TOKEN')
-
 
 class RainbowBot(commands.Bot):
     stateActivityMapping = {
@@ -19,6 +19,7 @@ class RainbowBot(commands.Bot):
     def __init__(self):
         self.match = None
         self.matchMessage = None
+        self.resetMessageContent()
 
         intents = discord.Intents.default()
         intents.members = True
@@ -33,67 +34,67 @@ class RainbowBot(commands.Bot):
 
     def setup_bot_commands(self):
         @self.command(name='startMatch')
-        async def _startMatch(ctx, *playerNames: discord.Member):
-            message = ''
+        async def _startMatch(ctx, *playerNames):
             self.match = RainbowMatch()
 
             if len(playerNames) > 0:
-                if self.validatePlayerNames(ctx, playerNames):
-                    self.match.setPlayerNames(playerNames)
-                    message += f"Starting a new match with {', '.join([player.mention for player in playerNames])}.\n"
+                playerObjects = self.validatePlayerNames(ctx, playerNames)
+                if playerObjects is not None:
+                    self.match.setPlayerNames(playerObjects)
+                    self.messageContent['friendlyMessage'] = f"Starting a new match with {self.match.playersString}.\n"
                 else:
-                    message += 'At least one of the players you mentioned is not on this server, please try again.'
-                    await bot.sendMessage(ctx, message)
+                    self.messageContent['friendlyMessage'] = 'At least one of the players you mentioned is not on this server, please try again.'
+                    await bot.sendMessage(ctx)
                     return
             else:
-                message += 'No players set. Use "**!startMatch @player1 @player2...**" to set players.'
-                await bot.sendMessage(ctx, message)
+                self.messageContent['friendlyMessage'] = 'No players set. Use "**!startMatch @player1 @player2...**" to set players.'
+                await bot.sendMessage(ctx)
                 return
 
-            message += f'Ban the **{self.match.getMapBan()}** map in rotation, and these operators:\n'
+            self.messageContent['matchMetadata'] = f'Ban the **{self.match.getMapBan()}** map in rotation, and these operators:\n'
             attBans, defBans = self.match.getOperatorBanChoices()
             att1, att2 = attBans
             def1, def2 = defBans
-            message += f'Attack:  **{att1}** or if banned **{att2}**\n'
-            message += f'Defense: **{def1}** or if banned **{def2}**\n'
+            self.messageContent['matchMetadata'] += f'Attack:  **{att1}** or if banned **{att2}**\n'
+            self.messageContent['matchMetadata'] += f'Defense: **{def1}** or if banned **{def2}**\n'
 
-            message += '\nNext, tell me the "**!bans firstOp secondOp...**":'
+            self.messageContent['actionPrompt'] = 'Next, tell me the "**!bans op1 op2...**":'
 
-            await bot.sendMessage(ctx, message)
+            await bot.sendMessage(ctx)
             await bot.setBotActivity('matchInProgress')
 
         @_startMatch.error
         async def _startMatch_error(ctx, error):
             if isinstance(error, commands.BadArgument):
                 await bot.setBotActivity('idle')
-                message = 'All players must be mentioned directly using the @ syntax and be users on this server, please try again.'
-                await bot.sendMessage(ctx, message)
+                self.messageContent['friendlyMessage'] = 'All players must be mentioned directly using the @ syntax and be users on this server (did you mention a role?), please try again.'
+                await bot.sendMessage(ctx)
+
 
         @self.command(name='bans')
         async def _bans(ctx, *args):
             if self.match == None:
-                message = 'No match in progress. Use "**!startMatch**" to start a new match.'
-                await bot.sendMessage(ctx, message)
+                self.messageContent['friendlyMessage'] = 'No match in progress. Use "**!startMatch**" to start a new match.'
+                await bot.sendMessage(ctx)
                 return
 
-            message = ''
+            self.messageContent['friendlyMessage'] = f"Paying a match with {self.match.playersString}.\n"
+
             bans = ' '.join(args[0:4])
             sanitized_bans = self.match.banOperators(bans)
 
             if len(sanitized_bans) == 0:
-                message += 'No operators are banned in this match.\n'
+                self.messageContent['matchMetadata'] = 'No operators are banned in this match.\n'
             else:
-                bans = ', '.join(
-                    f'**{ban}**' for ban in sanitized_bans if ban is not None)
-                message = f'The following operators are banned in this match:\n{bans}\n'
-                unrecognized_bans = [ban for ban in zip(
-                    sanitized_bans, args) if ban[0] is None]
+                bans = ', '.join(f'**{ban}**' for ban in sanitized_bans if ban is not None)
+                self.messageContent['matchMetadata'] = f'The following operators are banned in this match:\n{bans}\n'
+                unrecognized_bans = [ban for ban in zip(sanitized_bans, args) if ban[0] is None]
                 if len(unrecognized_bans) > 0:
-                    message += f'The following operators you passed were not recognized:\n{", ".join([f"**{ban[1]}**" for ban in unrecognized_bans])}\n'
+                    self.messageContent['matchMetadata'] += f'The following operators you passed were not recognized:\n{", ".join([f"**{ban[1]}**" for ban in unrecognized_bans])}\n'
 
-            message += 'Use "**!addBans**" to add new bans.\n'
-            message += 'Use "**!startAttack**" or "**!startDefense**" to start the match.'
-            await bot.sendMessage(ctx, message)
+            self.messageContent['actionPrompt'] = 'Use "**!addBans**" to add new bans.\n'
+            self.messageContent['actionPrompt'] += 'Use "**!startAttack**" or "**!startDefense**" to start the match.'
+            await bot.sendMessage(ctx)
 
         @self.command(name='addBans')
         async def _bans(ctx, *args):
@@ -109,11 +110,9 @@ class RainbowBot(commands.Bot):
             if len(sanitized_bans) == 0:
                 message += 'No operators were passed with the command.\n'
             else:
-                bans = ', '.join(
-                    f'**{ban}**' for ban in sanitized_bans if ban is not None)
+                bans = ', '.join(f'**{ban}**' for ban in sanitized_bans if ban is not None)
                 message = f'The following operators are now **also** banned in this match:\n{bans}\n'
-                unrecognized_bans = [ban for ban in zip(
-                    sanitized_bans, args) if ban[0] is None]
+                unrecognized_bans = [ban for ban in zip(sanitized_bans, args) if ban[0] is None]
                 if len(unrecognized_bans) > 0:
                     message += f'The following operators you passed were not recognized:\n{", ".join([f"**{ban[1]}**" for ban in unrecognized_bans])}\n'
 
@@ -158,6 +157,7 @@ class RainbowBot(commands.Bot):
 
         @self.command(name='another')
         async def anotherMatch(ctx):
+            # TODO: Validate that the players object here works as intended
             await _startMatch(ctx, *self.match.players)
 
         @self.command(name='goodnight')
@@ -181,7 +181,9 @@ class RainbowBot(commands.Bot):
             message = 'No match in progress. Use "**!startMatch**" to start a new match.'
             await bot.sendMessage(ctx, message)
             return
-
+        
+        self.messageContent['friendlyMessage'] = f"Playing a match with {self.match.playersString}.\n"
+        
         if side == 'attack':
             self.match.playingOnSide = 'attack'
         else:
@@ -219,17 +221,33 @@ class RainbowBot(commands.Bot):
         self.matchMessage = None
 
     def validatePlayerNames(self, ctx, playerNames):
-        members = ctx.guild.members
+        playerIds = [re.findall(r'\d+', name) for name in playerNames if name.startswith('<@')]
+        playerIds = [item for sublist in playerIds for item in sublist]
 
-        # Validate that the given players are members of the server
-        for player in playerNames:
-            if player not in members:
-                print(f"{player.name} is not a member of this server.")
-                return False
+        members = [str(member.id) for member in ctx.guild.members]
 
-        return True
-    
-    async def sendMessage(self, ctx, message):
+        playerObjects = []
+        for playerId in playerIds:
+            if playerId not in members:
+                return None
+            else:
+                playerObjects.append(ctx.guild.get_member(int(playerId)))
+
+        return playerObjects
+
+    def resetMessageContent(self):
+        self.messageContent = {
+            'friendlyMessage': '',
+            'matchScore': '',
+            'matchMetadata': '',
+            'roundMetadata': '',
+            'roundLineup': '',
+            'actionPrompt': ''
+        }
+
+    async def sendMessage(self, ctx):
+        message = '\n'.join([v for v in self.messageContent.values() if v != ''])
+
         if self.matchMessage:
             await self.matchMessage.edit(content=message)
         else:
