@@ -55,7 +55,7 @@ class RainbowMatch:
         defBans = random.sample(self.defenders, k=2)
         return attBans, defBans
 
-    def banOperators(self, input_string):
+    def banOperators(self, input_string, ban=True):
         """Removes the given operators from the list of available operators, and returns the sanitized list of operators."""
         input_names = re.split(r'\W+\s*', input_string)
 
@@ -64,20 +64,21 @@ class RainbowMatch:
 
         sanitized_names = []
         for name in input_names:
-            match, score = process.extractOne(
-                name, self.attackers + self.defenders)
+            match, score = process.extractOne(name, self.attackers + self.defenders) if ban else process.extractOne(name, self.bannedOperators)
             if score >= 75:
                 sanitized_names.append(match)
             else:
                 sanitized_names.append(None)
 
         for op in sanitized_names:
-            if op in self.attackers:
-                self.bannedOperators.append(op)
-                self.attackers.remove(op)
-            elif op in self.defenders:
-                self.bannedOperators.append(op)
-                self.defenders.remove(op)
+            if ban:
+                if op in self.attackers:
+                    self.bannedOperators.append(op)
+                elif op in self.defenders:
+                    self.bannedOperators.append(op)
+            else:
+                if op in self.bannedOperators:
+                    self.bannedOperators.remove(op)
 
         return sanitized_names
 
@@ -94,10 +95,9 @@ class RainbowMatch:
         self.playersString = playersString
 
     def getPlayedOperators(self, side):
-        """Returns a list of opertors for the specified side."""
-        if side == "attack":
-            return random.sample(self.attackers, k=5)
-        return random.sample(self.defenders, k=5)
+        """Returns a list of operators for the specified side, excluding any banned operators."""
+        available_operators = [op for op in (self.attackers if side == "attack" else self.defenders) if op not in self.bannedOperators]
+        return random.sample(available_operators, k=min(5, len(available_operators)))
 
     def resolveRound(self, result, overtimeSide):
         """Resolves the round, updating the scores and the side, and returns True if the match is still ongoing."""

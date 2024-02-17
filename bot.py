@@ -65,7 +65,7 @@ class RainbowBot(commands.Bot):
             self.messageContent['matchMetadata'] += f'Attack:  **{att1}** or if banned **{att2}**\n'
             self.messageContent['matchMetadata'] += f'Defense: **{def1}** or if banned **{def2}**\n'
 
-            self.messageContent['actionPrompt'] = 'Next, tell me the "**!bans op1 op2...**":'
+            self.messageContent['actionPrompt'] = 'Next, tell me the "**!ban op1 op2...**":'
 
             await bot.sendMessage(ctx)
             await bot.setBotActivity('matchInProgress')
@@ -77,9 +77,8 @@ class RainbowBot(commands.Bot):
                 self.messageContent['playersBanner'] = 'All players must be mentioned directly using the @ syntax and be users on this server (did you mention a role?), please try again.'
                 await bot.sendMessage(ctx)
 
-
-        @self.command(name='bans')
-        async def _bans(ctx, *args):
+        @self.command(name='ban')
+        async def _ban(ctx, *args):
             await ctx.message.delete()
             if self.match == None:
                 self.messageContent['playersBanner'] = 'No match in progress. Use "**!startMatch**" to start a new match.'
@@ -88,20 +87,45 @@ class RainbowBot(commands.Bot):
 
             self.messageContent['playersBanner'] = f"Playing a match with {self.match.playersString}.\n"
 
-            bans = ' '.join(args[0:4])
+            bans = ' '.join(args)
             sanitized_bans = self.match.banOperators(bans)
 
-            if len(sanitized_bans) == 0 and self.match.bannedOperators == []:
+            if self.match.bannedOperators == []:
                 self.messageContent['matchMetadata'] = 'No operators are banned in this match.\n'
             else:
-                bans = ', '.join(f'**{ban}**' for ban in sanitized_bans if ban is not None)
                 self.messageContent['matchMetadata'] = f'The following operators are banned in this match:\n{", ".join([f"**{op}**" for op in self.match.bannedOperators])}\n'
                 unrecognized_bans = [ban for ban in zip(sanitized_bans, args) if ban[0] is None]
                 if len(unrecognized_bans) > 0:
                     self.messageContent['matchMetadata'] += f'The following operators you passed were not recognized:\n{", ".join([f"**{ban[1]}**" for ban in unrecognized_bans])}\n'
 
             if self.match.currRound == 0:
-                self.messageContent['actionPrompt'] = 'Use "**!bans**" to add new bans.\n'
+                self.messageContent['actionPrompt'] = 'Use "**!ban**" to add new bans, or "**!unban**" to unban operators.\n'
+                self.messageContent['actionPrompt'] += 'Use "**!startAttack**" or "**!startDefense**" to start the match.'
+            else:
+                self.messageContent['actionPrompt'] = 'Use "**!won**" or "**!lost**" to continue.'
+            await bot.sendMessage(ctx)
+
+        @self.command(name='unban')
+        async def _unban(ctx, *args):
+            await ctx.message.delete()
+            if self.match == None:
+                self.messageContent['playersBanner'] = 'No match in progress. Use "**!startMatch**" to start a new match.'
+                await bot.sendMessage(ctx, False)
+                return
+
+            unbans = ' '.join(args)
+            sanitized_unbans = self.match.banOperators(unbans, False)
+
+            if self.match.bannedOperators == []:
+                self.messageContent['matchMetadata'] = 'No operators are banned in this match.\n'
+            else:
+                self.messageContent['matchMetadata'] = f'The following operators are banned in this match:\n{", ".join([f"**{op}**" for op in self.match.bannedOperators])}\n'
+                unrecognized_bans = [ban for ban in zip(sanitized_unbans, args) if ban[0] is None]
+                if len(unrecognized_bans) > 0:
+                    self.messageContent['matchMetadata'] += f'The following operators you passed were not recognized:\n{", ".join([f"**{ban[1]}**" for ban in unrecognized_bans])}\n'
+
+            if self.match.currRound == 0:
+                self.messageContent['actionPrompt'] = 'Use "**!ban**" to add new bans, or "**!unban**" to unban operators.\n'
                 self.messageContent['actionPrompt'] += 'Use "**!startAttack**" or "**!startDefense**" to start the match.'
             else:
                 self.messageContent['actionPrompt'] = 'Use "**!won**" or "**!lost**" to continue.'
