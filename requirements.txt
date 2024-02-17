@@ -1,3 +1,4 @@
 discord.py
 fuzzywuzzy
+python-dotenv
 python-Levenshtein
