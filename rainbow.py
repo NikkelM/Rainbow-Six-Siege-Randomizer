@@ -82,10 +82,29 @@ class RainbowMatch:
 
         return sanitized_names
 
-    def setPlayerNames(self, playerNames):
+    def setPlayers(self, playerNames):
         """Sets the players in the current match."""
         playerNames = list(set(playerNames))
         self.players = sorted(playerNames, key=lambda player: player.nick if player.nick else (player.global_name if player.global_name else player.name))
+        
+        self.constructPlayersString()
+    
+    def removePlayers(self, playerNames):
+        """Removes the given players from the list of players."""
+        originalPlayers = self.players.copy()
+        for player in playerNames:
+            if player in self.players:
+                self.players.remove(player)
+
+        if len(self.players) == 0:
+            self.players = originalPlayers
+            return False
+        
+        self.constructPlayersString()
+        return True
+    
+    def constructPlayersString(self):
+        """Constructs the string of players for the current match."""
         players = [player.mention for player in self.players]
         if len(players) > 1:
             lastTwoPlayers = ' and '.join(players[-2:])

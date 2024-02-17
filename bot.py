@@ -47,7 +47,7 @@ class RainbowBot(commands.Bot):
             if len(playerNames) > 0:
                 playerObjects = self.validatePlayerNames(ctx, playerNames)
                 if playerObjects is not None:
-                    self.match.setPlayerNames(playerObjects)
+                    self.match.setPlayers(playerObjects)
                     self.messageContent['playersBanner'] = f"Starting a new match with {self.match.playersString}.\n"
                 else:
                     self.messageContent['playersBanner'] = 'At least one of the players you mentioned is not on this server, please try again.'
@@ -81,7 +81,7 @@ class RainbowBot(commands.Bot):
             if len(playerNames) > 0:
                 playerObjects = self.validatePlayerNames(ctx, playerNames)
                 if playerObjects is not None:
-                    self.match.setPlayerNames(playerObjects + self.match.players)
+                    self.match.setPlayers(playerObjects + self.match.players)
                     self.messageContent['playersBanner'] = f"Player{'s' if len(playerNames) > 1 else ''} added! Current players are {self.match.playersString}.\n"
                 else:
                     self.messageContent['playersBanner'] = f'At least one of the players you mentioned is not on this server. Current players are {self.match.playersString}.\n'
@@ -89,6 +89,34 @@ class RainbowBot(commands.Bot):
                     return
             else:
                 self.messageContent['playersBanner'] = f'No new player set. Current players are {self.match.playersString}.\n'
+                await bot.sendMessage(ctx)
+                return
+
+            await bot.sendMessage(ctx)
+
+        @self.command(name='removePlayers')
+        async def _removePlayers(ctx, *playerNames):
+            await ctx.message.delete()
+            if self.match == None:
+                self.messageContent['playersBanner'] = 'No match in progress. Use "**!startMatch**" to start a new match.'
+                await bot.sendMessage(ctx, False)
+                return
+
+            if len(playerNames) > 0:
+                playerObjects = self.validatePlayerNames(ctx, playerNames)
+                if playerObjects is not None:
+                    removalSuccessful = self.match.removePlayers(playerObjects)
+                    if not removalSuccessful:
+                        self.messageContent['playersBanner'] = f'You cannot remove all players from the match! Current players are {self.match.playersString}.\n'
+                        await bot.sendMessage(ctx)
+                        return
+                    self.messageContent['playersBanner'] = f"Player{'s' if len(playerNames) > 1 else ''} removed! Current players are {self.match.playersString}.\n"
+                else:
+                    self.messageContent['playersBanner'] = f'At least one of the players you mentioned is not on this server. Current players are {self.match.playersString}.\n'
+                    await bot.sendMessage(ctx)
+                    return
+            else:
+                self.messageContent['playersBanner'] = f'No player removed. Current players are {self.match.playersString}.\n'
                 await bot.sendMessage(ctx)
                 return
 
