@@ -283,7 +283,7 @@ class RainbowBot(commands.Bot):
 
     async def playRound(self, ctx):
         self.messageContent['playersBanner'] = f"Playing a match with {self.match.playersString}{' on **' + self.match.map + '**' if self.match.map else ''}.\n"
-        self.messageContent['matchScore'] = f'The score is **{self.match.scores["blue"]}**:**{self.match.scores["red"]}**, we are playing on {self.match.playingOnSide}.\n'
+        self.messageContent['matchScore'] = f'The score is **{self.match.scores["blue"]}**:**{self.match.scores["red"]}**, we are playing on **{self.match.playingOnSide}**.\n'
         self.messageContent['roundMetadata'] = f'Here is your lineup for round {self.match.currRound}:'
 
         operators = self.match.getPlayedOperators(self.match.playingOnSide)
