@@ -41,13 +41,13 @@ class RainbowBot(commands.Bot):
                 playerObjects = self.validatePlayerNames(ctx, playerNames)
                 if playerObjects is not None:
                     self.match.setPlayerNames(playerObjects)
-                    self.messageContent['friendlyMessage'] = f"Starting a new match with {self.match.playersString}.\n"
+                    self.messageContent['playersBanner'] = f"Starting a new match with {self.match.playersString}.\n"
                 else:
-                    self.messageContent['friendlyMessage'] = 'At least one of the players you mentioned is not on this server, please try again.'
+                    self.messageContent['playersBanner'] = 'At least one of the players you mentioned is not on this server, please try again.'
                     await bot.sendMessage(ctx)
                     return
             else:
-                self.messageContent['friendlyMessage'] = 'No players set. Use "**!startMatch @player1 @player2...**" to set players.'
+                self.messageContent['playersBanner'] = 'No players set. Use "**!startMatch @player1 @player2...**" to set players.'
                 await bot.sendMessage(ctx)
                 return
 
@@ -67,18 +67,18 @@ class RainbowBot(commands.Bot):
         async def _startMatch_error(ctx, error):
             if isinstance(error, commands.BadArgument):
                 await bot.setBotActivity('idle')
-                self.messageContent['friendlyMessage'] = 'All players must be mentioned directly using the @ syntax and be users on this server (did you mention a role?), please try again.'
+                self.messageContent['playersBanner'] = 'All players must be mentioned directly using the @ syntax and be users on this server (did you mention a role?), please try again.'
                 await bot.sendMessage(ctx)
 
 
         @self.command(name='bans')
         async def _bans(ctx, *args):
             if self.match == None:
-                self.messageContent['friendlyMessage'] = 'No match in progress. Use "**!startMatch**" to start a new match.'
+                self.messageContent['playersBanner'] = 'No match in progress. Use "**!startMatch**" to start a new match.'
                 await bot.sendMessage(ctx)
                 return
 
-            self.messageContent['friendlyMessage'] = f"Paying a match with {self.match.playersString}.\n"
+            self.messageContent['playersBanner'] = f"Paying a match with {self.match.playersString}.\n"
 
             bans = ' '.join(args[0:4])
             sanitized_bans = self.match.banOperators(bans)
@@ -182,7 +182,7 @@ class RainbowBot(commands.Bot):
             await bot.sendMessage(ctx, message)
             return
         
-        self.messageContent['friendlyMessage'] = f"Playing a match with {self.match.playersString}.\n"
+        self.messageContent['playersBanner'] = f"Playing a match with {self.match.playersString}.\n"
         
         if side == 'attack':
             self.match.playingOnSide = 'attack'
@@ -237,7 +237,7 @@ class RainbowBot(commands.Bot):
 
     def resetMessageContent(self):
         self.messageContent = {
-            'friendlyMessage': '',
+            'playersBanner': '',
             'matchScore': '',
             'matchMetadata': '',
             'roundMetadata': '',
