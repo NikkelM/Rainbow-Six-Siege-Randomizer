@@ -84,6 +84,7 @@ class RainbowMatch:
 
     def setPlayerNames(self, playerNames):
         """Sets the players in the current match."""
+        playerNames = list(set(playerNames))
         self.players = sorted(playerNames, key=lambda player: player.nick if player.nick else (player.global_name if player.global_name else player.name))
         players = [player.mention for player in self.players]
         if len(players) > 1:

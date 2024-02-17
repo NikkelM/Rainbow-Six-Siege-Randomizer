@@ -70,12 +70,29 @@ class RainbowBot(commands.Bot):
             await bot.sendMessage(ctx)
             await bot.setBotActivity('matchInProgress')
 
-        @_startMatch.error
-        async def _startMatch_error(ctx, error):
-            if isinstance(error, commands.BadArgument):
-                await bot.setBotActivity('idle')
-                self.messageContent['playersBanner'] = 'All players must be mentioned directly using the @ syntax and be users on this server (did you mention a role?), please try again.'
+        @self.command(name='addPlayers')
+        async def _addPlayers(ctx, *playerNames):
+            await ctx.message.delete()
+            if self.match == None:
+                self.messageContent['playersBanner'] = 'No match in progress. Use "**!startMatch**" to start a new match.'
+                await bot.sendMessage(ctx, False)
+                return
+
+            if len(playerNames) > 0:
+                playerObjects = self.validatePlayerNames(ctx, playerNames)
+                if playerObjects is not None:
+                    self.match.setPlayerNames(playerObjects + self.match.players)
+                    self.messageContent['playersBanner'] = f"Player{'s' if len(playerNames) > 1 else ''} added! Current players are {self.match.playersString}.\n"
+                else:
+                    self.messageContent['playersBanner'] = f'At least one of the players you mentioned is not on this server. Current players are {self.match.playersString}.\n'
+                    await bot.sendMessage(ctx)
+                    return
+            else:
+                self.messageContent['playersBanner'] = f'No new player set. Current players are {self.match.playersString}.\n'
                 await bot.sendMessage(ctx)
+                return
+
+            await bot.sendMessage(ctx)
 
         @self.command(name='ban')
         async def _ban(ctx, *args):
@@ -144,6 +161,7 @@ class RainbowBot(commands.Bot):
 
         @self.command(name='goodnight')
         async def _goodnight(ctx):
+            self.messageContent['playersBanner'] = f"Finished a match with {self.match.playersString}.\n"
             self.messageContent['roundMetadata'] = ''
             self.messageContent['roundLineup'] = ''
             self.messageContent['matchMetadata'] = 'Ending the session here... '
@@ -207,6 +225,7 @@ class RainbowBot(commands.Bot):
         await bot.sendMessage(ctx)
 
     async def playRound(self, ctx):
+        self.messageContent['playersBanner'] = f"Playing a match with {self.match.playersString}.\n"
         self.messageContent['matchScore'] = f'The current score is **{self.match.scores["blue"]}**:**{self.match.scores["red"]}**.\n'
         self.messageContent['roundMetadata'] = f'Here is your lineup for round {self.match.currRound}:'
 
