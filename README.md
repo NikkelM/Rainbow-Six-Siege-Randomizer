@@ -15,9 +15,9 @@ The bot needs the `Server Members` and `Messages` intents to work properly, and 
 
 - Read Messages/View Channels
 - Send Messages
+- Manage Messages
 <!-- TODO -->
 <!-- - Add Reactions -->
-<!-- - Manage Messages -->
 
 After selecting the given intents and permissions, an invite link is generated that you can use to add the bot to your server.
 

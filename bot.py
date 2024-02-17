@@ -35,7 +35,14 @@ class RainbowBot(commands.Bot):
     def setup_bot_commands(self):
         @self.command(name='startMatch')
         async def _startMatch(ctx, *playerNames):
+            if(self.match):
+                await ctx.message.delete()
+                self.messageContent['actionPrompt'] += '\n\nA match is already in progress. Use **!another** to start a new match with the same players or **!goodnight** to end the session.'
+                await bot.sendMessage(ctx)
+                return
+
             self.match = RainbowMatch()
+            self.resetMessageContent()
 
             if len(playerNames) > 0:
                 playerObjects = self.validatePlayerNames(ctx, playerNames)
@@ -73,12 +80,13 @@ class RainbowBot(commands.Bot):
 
         @self.command(name='bans')
         async def _bans(ctx, *args):
+            await ctx.message.delete()
             if self.match == None:
                 self.messageContent['playersBanner'] = 'No match in progress. Use "**!startMatch**" to start a new match.'
                 await bot.sendMessage(ctx, False)
                 return
 
-            self.messageContent['playersBanner'] = f"Paying a match with {self.match.playersString}.\n"
+            self.messageContent['playersBanner'] = f"Playing a match with {self.match.playersString}.\n"
 
             bans = ' '.join(args[0:4])
             sanitized_bans = self.match.banOperators(bans)
@@ -101,14 +109,17 @@ class RainbowBot(commands.Bot):
 
         @self.command(name='startAttack')
         async def _startAttack(ctx):
+            await ctx.message.delete()
             await self.playMatch(ctx, 'attack')
 
         @self.command(name='startDefense')
         async def _startDefense(ctx):
+            await ctx.message.delete()
             await self.playMatch(ctx, 'defense')
 
         @self.command(name='won')
         async def _won(ctx, overtimeSide=None):
+            await ctx.message.delete()
             if (self.match.currRound == 6 and self.match.scores["red"] == 3):
                 await bot.setBotActivity('overtime')
                 if not overtimeSide:
@@ -123,6 +134,7 @@ class RainbowBot(commands.Bot):
 
         @self.command(name='lost')
         async def _lost(ctx, overtimeSide=None):
+            await ctx.message.delete()
             if (self.match.currRound == 6 and self.match.scores["blue"] == 3):
                 await bot.setBotActivity('overtime')
                 if not overtimeSide:
@@ -137,8 +149,9 @@ class RainbowBot(commands.Bot):
 
         @self.command(name='another')
         async def _another(ctx):
-            # TODO: Validate that the players object here works as intended
             playerIdStrings = [f'<@{player.id}>' for player in self.match.players]
+            self.match = None
+            self.matchMessage = None
             await _startMatch(ctx, *playerIdStrings)
 
         @self.command(name='goodnight')
@@ -154,6 +167,7 @@ class RainbowBot(commands.Bot):
 
             bot.match = None
             bot.matchMessage = None
+            self.match = None
 
             await bot.setBotActivity('idle')
 
@@ -210,7 +224,6 @@ class RainbowBot(commands.Bot):
         self.messageContent['matchScore'] = f'The match is over! The final score was **{self.match.scores["blue"]}**:**{self.match.scores["red"]}**.'
         self.messageContent['actionPrompt'] = 'Use "**!another**" to start a new match with the same players or "**!goodnight**" to end the session.'
         await bot.sendMessage(ctx)
-        self.matchMessage = None
 
     def validatePlayerNames(self, ctx, playerNames):
         playerIds = [re.findall(r'\d+', name) for name in playerNames if name.startswith('<@')]
