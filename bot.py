@@ -54,7 +54,7 @@ class RainbowBot(commands.Bot):
                     await bot.sendMessage(ctx)
                     return
             else:
-                self.messageContent['playersBanner'] = 'No players set. Use "**!startMatch @player1 @player2...**" to set players.'
+                self.messageContent['playersBanner'] = 'You can start a match using "**!startMatch @player1 @player2...**".'
                 await bot.sendMessage(ctx)
                 return
 
@@ -134,23 +134,27 @@ class RainbowBot(commands.Bot):
         async def _setMap(ctx, *mapName):
             mapName = ' '.join(mapName)
             await ctx.message.delete()
+
             if self.match == None:
                 self.messageContent['playersBanner'] = 'No match in progress. Use "**!startMatch**" to start a new match.'
                 await bot.sendMessage(ctx, False)
                 return
-
-            isValidMap = self.match.setMap(mapName)
-            if isValidMap:
+            self.messageContent['actionPrompt'] = ''
+            couldSetMap = self.match.setMap(mapName)
+            if couldSetMap == 2:
                 self.messageContent['playersBanner'] = f"Playing a match with {self.match.playersString}{' on **' + self.match.map + '**' if self.match.map else ''}.\n"
-                if self.match.currRound == 0:
-                    if not self.match.bannedOperators:
-                        self.messageContent['actionPrompt'] = 'Next, use "**!ban op1 op2...**" or use "**!startAttack**" or "**!startDefense**" to start the match.'
-                    else:
-                        self.messageContent['actionPrompt'] = 'Use "**!startAttack**" or "**!startDefense**" to start the match.'
-                else:
-                    self.messageContent['actionPrompt'] = 'Use "**!won**" or "**!lost**" to continue.'
+            elif couldSetMap == 1:
+                self.messageContent['actionPrompt'] += f'**{mapName}** is not a valid map. Use "**!setMap map**" to try again.\n'
             else:
-                self.messageContent['actionPrompt'] = f'**{mapName}** is not a valid map. Use "**!setMap map**" to try again.\n'
+                self.messageContent['actionPrompt'] += f'A map has already been set, you cannot change it anymore. Use "**!another**" to restart the match.\n'
+
+            if self.match.currRound == 0:
+                if not self.match.bannedOperators:
+                    self.messageContent['actionPrompt'] += 'Use "**!ban op1 op2...**" or use "**!startAttack**" or "**!startDefense**" to start the match.'
+                else:
+                    self.messageContent['actionPrompt'] += 'Use "**!startAttack**" or "**!startDefense**" to start the match.'
+            else:
+                self.messageContent['actionPrompt'] += 'Use "**!won**" or "**!lost**" to continue.'
             await bot.sendMessage(ctx)
 
         @self.command(name='startAttack')
@@ -269,7 +273,10 @@ class RainbowBot(commands.Bot):
             self.messageContent['matchMetadata'] = f'The following operators are banned in this match:\n{", ".join([f"**{op}**" for op in self.match.bannedOperators])}\n'
             unrecognized_bans = [ban for ban in zip(sanitized_bans, args) if ban[0] is None]
             if len(unrecognized_bans) > 0:
-                self.messageContent['matchMetadata'] += f'The following operators you passed were not recognized:\n{", ".join([f"**{ban[1]}**" for ban in unrecognized_bans])}\n'
+                if ban:
+                    self.messageContent['matchMetadata'] += f'The following operators were not recognized:\n{", ".join([f"**{ban[1]}**" for ban in unrecognized_bans])}\n'
+                else:
+                    self.messageContent['matchMetadata'] += f'The following operators were not recognized, or not banned:\n{", ".join([f"**{ban[1]}**" for ban in unrecognized_bans])}\n'
 
         if self.match.currRound == 0:
             self.messageContent['actionPrompt'] = ''

@@ -78,12 +78,23 @@ class RainbowMatch:
 
     def setMap(self, map):
         """Sets the map for the current match."""
+        if self.map and self.currRound > 0:
+            return 0
+
         mapMapping = self._getMap(map)
         if not mapMapping:
-            return False
+            return 1
+
         self.map = mapMapping[0]
-        self.sites = mapMapping[1]
-        return True
+        new_sites = mapMapping[1]
+
+        if self.currRound > 0:
+            site_mapping = {"FIRST": 0, "SECOND": 1, "THIRD": 2, "FOURTH": 3}
+            self.currSite = new_sites[site_mapping.get(self.currSite, 0)]
+            self.sites = [new_sites[site_mapping[site]] for site in self.sites if site in site_mapping]
+        else:
+            self.sites = new_sites
+        return 2
 
     def getPlayedSite(self):
         """Returns a choice of site that should be played, and removes the choice from the pool."""
@@ -165,6 +176,7 @@ class RainbowMatch:
         if result == "won":
             self.scores["blue"] += 1
             if self.playingOnSide == "defense":
+                # TODO: If setting a map during the match, the self.currSite will not be in self.sites
                 self.sites.remove(self.currSite)
         else:
             self.scores["red"] += 1
