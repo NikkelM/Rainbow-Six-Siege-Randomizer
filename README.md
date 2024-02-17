@@ -42,6 +42,7 @@ The bot has the following commands:
 | `!startMatch` | List of `@Player` mentions | Starts a new match with the given players. Must be used in order for any other command to work. |
 | `!addPlayers` | List of `@Player` mentions | Adds the given players to the match. |
 | `!removePlayers` | List of `@Player` mentions | Removes the given players from the match. At least one player must remain in the match. |
+| `!setMap` | A valid `map` | Sets the map that is being played. |
 | `!ban` | List of operator names | Bans the given operators from the match. |
 | `!unban` | List of operator names | Unbans the given operators from the match. |
 | `!startAttack` | | Starts the match on the attacking side. If called during an ongoing match, shuffles a new attack phase without changing the score. |

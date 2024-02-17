@@ -6,6 +6,7 @@ class RainbowMatch:
     def __init__(self):
         self.attackers, self.defenders = self._getOperators().values()
         self.bannedOperators = []
+        self.map = None
         self.sites = self._resetSites()
         self.playingOnSide = None
         self.currSite = None
@@ -34,8 +35,8 @@ class RainbowMatch:
             ]
         }
     
-    def _getMaps(self):
-        return {
+    def _getMap(self, map):
+        maps = {
             'Lair': ['2F Master Office/2F R6 Room', '1F Bunks/1F Briefing', '1F Armory/1F Weapon Maintenance', 'B Lab/B Lab Support'],
             'Clubhouse': ['2F Bedroom/2F Gym', '2F Cash Room/2F CCTV Room', '1F Bar/1F Stage', 'B Church/B Arsenal Room'],
             'Consulate': ['2F Consul Office/2F Meeting Room', '1F Exposition Room/1F Piano Room', 'B Servers/1F Tellers', 'B Cafeteria/B Garage'],
@@ -61,15 +62,28 @@ class RainbowMatch:
             'Stadium Bravo': ['2F Armory Lockers/2F Archives', '2F Penthouse/2F VIP Lounge', '1F Showers/1F Server', '1F Service/1F Kitchen'],
             'Nighthaven Labs': ['2F Command Center/2F Servers', '1F Kitchen/1F Cafeteria', '1F Control Room/1F Storage', 'B Tank/B Assembly'],
         }
+        best_match, score = process.extractOne(map, maps.keys())
+        if score > 70:
+            return [best_match, maps[best_match]]
+        return None
 
     def _resetSites(self):
-        """Returns a list of site choices, between 1-4."""
-        return ["FIRST", "SECOND", "THIRD", "FOURTH"]
+        """Resets the sites for the current map."""
+        return self._getMap(self.map)[1] if self.map else ['FIRST', 'SECOND', 'THIRD', 'FOURTH']
 
     def getMapBan(self):
         """Returns a choice of map that should be banned."""
         mapStrings = ["FIRST", "SECOND", "THIRD", "FOURTH", "FIFTH"]
         return random.sample(mapStrings, k=1)[0]
+
+    def setMap(self, map):
+        """Sets the map for the current match."""
+        mapMapping = self._getMap(map)
+        if not mapMapping:
+            return False
+        self.map = mapMapping[0]
+        self.sites = mapMapping[1]
+        return True
 
     def getPlayedSite(self):
         """Returns a choice of site that should be played, and removes the choice from the pool."""
