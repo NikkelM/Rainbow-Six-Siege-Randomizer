@@ -176,7 +176,6 @@ class RainbowMatch:
         if result == "won":
             self.scores["blue"] += 1
             if self.playingOnSide == "defense":
-                # TODO: If setting a map during the match, the self.currSite will not be in self.sites
                 self.sites.remove(self.currSite)
         else:
             self.scores["red"] += 1
