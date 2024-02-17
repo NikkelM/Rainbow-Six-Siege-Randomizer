@@ -6,10 +6,11 @@ from fuzzywuzzy import process
 class RainbowMatch:
     def __init__(self):
         self.attackers, self.defenders = self._getOperators().values()
+        self.bannedOperators = []
         self.sites = self._resetSites()
         self.playingOnSide = None
         self.currSite = None
-        self.currRound = 1
+        self.currRound = 0
         self.scores = {"blue": 0, "red": 0}
         self.overtime = False
         self.players = []
@@ -72,8 +73,10 @@ class RainbowMatch:
 
         for op in sanitized_names:
             if op in self.attackers:
+                self.bannedOperators.append(op)
                 self.attackers.remove(op)
             elif op in self.defenders:
+                self.bannedOperators.append(op)
                 self.defenders.remove(op)
 
         return sanitized_names
@@ -90,13 +93,11 @@ class RainbowMatch:
             playersString = players[0] if players else ''
         self.playersString = playersString
 
-    def getAttackers(self):
-        """Returns a list of attackers, one for each player in the match."""
-        return random.sample(self.attackers, k=len(self.players))
-
-    def getDefenders(self):
-        """Returns a list of defenders, one for each player in the match."""
-        return random.sample(self.defenders, k=len(self.players))
+    def getPlayedOperators(self, side):
+        """Returns a list of opertors for the specified side."""
+        if side == "attack":
+            return random.sample(self.attackers, k=5)
+        return random.sample(self.defenders, k=5)
 
     def resolveRound(self, result, overtimeSide):
         """Resolves the round, updating the scores and the side, and returns True if the match is still ongoing."""
