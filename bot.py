@@ -92,6 +92,7 @@ class RainbowBot(commands.Bot):
                 await bot._sendMessage(ctx)
                 return
 
+            print(self.match.players)
             await bot._sendMessage(ctx)
 
         @self.command(name='removePlayers')
@@ -296,7 +297,8 @@ class RainbowBot(commands.Bot):
             self.messageContent['roundMetadata'] += f'\nChoose the **{site}** site.'
 
         self.messageContent['roundLineup'] = ''
-        for player, operator in zip(self.match.players, operators):
+        operators_copy = operators.copy()
+        for player, operator in zip(self.match.players, operators_copy):
             self.messageContent['roundLineup'] += f'{player.mention} plays **{operator}**\n'
             operators.remove(operator)
         
