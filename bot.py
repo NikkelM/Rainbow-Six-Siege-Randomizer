@@ -224,7 +224,9 @@ class RainbowBot(commands.Bot):
         else:
             self.match.playingOnSide = 'defense'
 
-        self.match.currRound += 1
+        if self.match.currRound == 0:
+                self.match.currRound = 1
+
         await self.playRound(ctx)
 
     async def banUnban(self, ctx, *args, ban=True):
