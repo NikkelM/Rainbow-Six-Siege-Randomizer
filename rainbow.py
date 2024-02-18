@@ -90,6 +90,7 @@ class RainbowMatch:
                 continue
             player = playerNames[i]
             playerNames[i] = {
+                "id": player.id,
                 "mention": player.mention,
                 "name": player.name,
                 "nick": player.nick,
@@ -103,14 +104,13 @@ class RainbowMatch:
     def removePlayers(self, playerNames):
         """Removes the given players from the list of players."""
         originalPlayers = self.players.copy()
-        for player in playerNames:
-            if player in self.players:
-                self.players.remove(player)
+        for guildMember in playerNames:
+            self.players = [player for player in self.players if player['id'] != guildMember.id]
 
         if len(self.players) == 0:
             self.players = originalPlayers
             return False
-        
+
         self._constructPlayersString()
         return True
 
