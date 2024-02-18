@@ -1,5 +1,11 @@
+.dockerignore
+.env
+.git
 .gitattributes
 .gitignore
+__pycache__
+dev
+dockerfile
 LICENSE
 R6.png
 README.md
