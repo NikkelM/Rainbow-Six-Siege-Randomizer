@@ -21,6 +21,7 @@ class RainbowBot(commands.Bot):
                 discord_message TEXT
             )
         """)
+        # TODO: Create table for cross-match statistics
         self.conn.commit()
 
         intents = discord.Intents.default()
@@ -37,24 +38,20 @@ class RainbowBot(commands.Bot):
     def setupBotCommands(self):
         @self.command(name='startMatch')
         async def _startMatch(ctx, *playerNames):
-            server_id = str(ctx.guild.id)
-            matchData = self.cursor.execute("SELECT match_data FROM matches WHERE server_id = ?", (server_id,)).fetchone()
-            print(matchData)
+            serverId = str(ctx.guild.id)
+            matchData = self.cursor.execute("SELECT match_data FROM matches WHERE server_id = ?", (serverId,)).fetchone()
 
-            if matchData is not None:
-                # TODO: Fix this
+            if matchData is not None and matchData[0] is not None:
                 await ctx.message.delete()
-                discordMessage = self.cursor.execute("SELECT discord_message FROM matches WHERE server_id = ?", (server_id,)).fetchone()[0]
-                discordMessage = json.loads(discordMessage)  # Convert message_content from a JSON string to a dictionary
-                discordMessage['messageContent']['actionPrompt'] = '\n\nA match is already in progress. Use **!another** to start a new match with the same players or **!goodnight** to end the session.'
-                await bot._sendMessage(ctx, discordMessage['messageContent'])  # Pass messageContent as an argument to _sendMessage
+                discordMessage = self.cursor.execute("SELECT discord_message FROM matches WHERE server_id = ?", (serverId,)).fetchone()[0]
+                discordMessage = json.loads(discordMessage)
+                discordMessage['messageContent']['actionPrompt'] = 'A match is already in progress. Use **!another** to start a new match with the same players or **!goodnight** to end the session.'
+                await bot._sendMessage(ctx, discordMessage)
                 return
 
-            # Start a new match on this server
             match = RainbowMatch()
-            discordMessage = self._resetDiscordMessage()
-            # Save the discordMessage to the database
-            self.cursor.execute("INSERT INTO matches (server_id, discord_message) VALUES (?, ?)", (server_id, json.dumps(discordMessage)))
+            discordMessage = self._resetDiscordMessage(ctx)
+            self.cursor.execute("INSERT INTO matches (server_id, discord_message) VALUES (?, ?)", (serverId, json.dumps(discordMessage)))
 
             if len(playerNames) > 0:
                 playerObjects = self._validatePlayerNames(ctx, playerNames)
@@ -70,11 +67,6 @@ class RainbowBot(commands.Bot):
                 await bot._sendMessage(ctx, discordMessage)
                 return
 
-            # TODO: When and where do we save the message object? Does update in the _sendMessage emthod work if it doesn't exist?
-            match_data = json.dumps(match.__dict__)
-            self.cursor.execute("INSERT INTO matches (server_id, match_data) VALUES (?, ?)", (server_id, match_data))
-            self.conn.commit()
-
             discordMessage['messageContent']['matchMetadata'] = f'Ban the **{match.getMapBan()}** map in rotation, and these operators:\n'
             attBans, defBans = match.getOperatorBanChoices()
             att1, att2 = attBans
@@ -83,6 +75,10 @@ class RainbowBot(commands.Bot):
             discordMessage['messageContent']['matchMetadata'] += f'Defense: **{def1}** or if banned **{def2}**\n'
 
             discordMessage['messageContent']['actionPrompt'] = 'Next, use "**!setMap map**" and "**!ban op1 op2...**"'
+
+            match_data = json.dumps(match.__dict__)
+            self.cursor.execute("UPDATE matches SET match_data = ? WHERE server_id = ?", (match_data, serverId))
+            self.conn.commit()
 
             await bot._sendMessage(ctx, discordMessage)
 
@@ -345,7 +341,9 @@ class RainbowBot(commands.Bot):
 
         return playerObjects
 
-    def _resetDiscordMessage(self):
+    def _resetDiscordMessage(self, ctx):
+        self.cursor.execute("DELETE FROM matches WHERE server_id = ?", (str(ctx.guild.id),))
+        self.conn.commit()
         return {
             'matchMessageId': None,
             'messageContent': {
@@ -359,6 +357,7 @@ class RainbowBot(commands.Bot):
         }
 
     async def _sendMessage(self, ctx, discordMessage, forgetMessage=False):
+        serverId = str(ctx.guild.id)
         message = '\n'.join([v for v in discordMessage['messageContent'].values() if v != ''])
 
         if discordMessage['matchMessageId']:
@@ -367,11 +366,11 @@ class RainbowBot(commands.Bot):
         else:
             discordMessage['matchMessageId'] = (await ctx.send(message)).id
         if forgetMessage:
-            discordMessage = self._resetDiscordMessage()
+            self._resetDiscordMessage(ctx)
+            return
 
-        server_id = str(ctx.guild.id)
         discordMessage = json.dumps(discordMessage)
-        self.cursor.execute("UPDATE matches SET discord_message = ? WHERE server_id = ?", (discordMessage, server_id))
+        self.cursor.execute("UPDATE matches SET discord_message = ? WHERE server_id = ?", (discordMessage, serverId))
         self.conn.commit()
 
 if __name__ == "__main__":
