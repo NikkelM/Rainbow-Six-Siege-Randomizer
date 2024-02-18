@@ -3,17 +3,29 @@ import re
 from fuzzywuzzy import process
 
 class RainbowMatch:
-    def __init__(self):
-        self.attackers, self.defenders = self._getOperators().values()
-        self.bannedOperators = []
-        self.map = None
-        self.sites = self._resetSites()
-        self.playingOnSide = None
-        self.currSite = None
-        self.currRound = 0
-        self.scores = {"blue": 0, "red": 0}
-        self.overtime = False
-        self.players = []
+    def __init__(self, existingMatch=None):
+        if existingMatch:
+            self.bannedOperators = existingMatch['bannedOperators']
+            self.map = existingMatch['map']
+            self.sites = existingMatch['sites']
+            self.playingOnSide = existingMatch['playingOnSide']
+            self.currSite = existingMatch['currSite']
+            self.currRound = existingMatch['currRound']
+            self.scores = existingMatch['scores']
+            self.overtime = existingMatch['overtime']
+            self.players = existingMatch['players']
+            self.playersString = existingMatch['playersString']
+        else:
+            self.bannedOperators = []
+            self.map = None
+            self.sites = self._resetSites()
+            self.playingOnSide = None
+            self.currSite = None
+            self.currRound = 0
+            self.scores = {"blue": 0, "red": 0}
+            self.overtime = False
+            self.players = []
+            self.playersString = ''
 
     def _getOperators(self):
         """Returns a dictionary with the list of attacker and defender operators."""
@@ -73,28 +85,38 @@ class RainbowMatch:
 
     def setPlayers(self, playerNames):
         """Sets the players in the current match."""
-        playerNames = list(set(playerNames))
-        self.players = sorted(playerNames, key=lambda player: player.nick if player.nick else (player.global_name if player.global_name else player.name))
+        for i in range(len(playerNames)):
+            if isinstance(playerNames[i], dict):
+                continue
+            player = playerNames[i]
+            playerNames[i] = {
+                "id": player.id,
+                "mention": player.mention,
+                "name": player.name,
+                "nick": player.nick,
+                "global_name": player.global_name
+            }
         
-        self.constructPlayersString()
+        playerNames = [dict(t) for t in {tuple(d.items()) for d in playerNames}]
+        self.players = sorted(playerNames, key=lambda player: player['nick'] if player['nick'] else (player['global_name'] if player['global_name'] else player['name']))
+        self._constructPlayersString()
 
     def removePlayers(self, playerNames):
         """Removes the given players from the list of players."""
         originalPlayers = self.players.copy()
-        for player in playerNames:
-            if player in self.players:
-                self.players.remove(player)
+        for guildMember in playerNames:
+            self.players = [player for player in self.players if player['id'] != guildMember.id]
 
         if len(self.players) == 0:
             self.players = originalPlayers
             return False
-        
-        self.constructPlayersString()
+
+        self._constructPlayersString()
         return True
 
-    def constructPlayersString(self):
+    def _constructPlayersString(self):
         """Constructs the string of players for the current match."""
-        players = [player.mention for player in self.players]
+        players = [player['mention'] for player in self.players]
         if len(players) > 1:
             lastTwoPlayers = ' and '.join(players[-2:])
             otherPlayers = players[:-2]
@@ -110,12 +132,14 @@ class RainbowMatch:
 
     def getOperatorBanChoices(self):
         """Returns a choice of operators that should be banned, two for each side (main and backup)."""
-        attBans = random.sample(self.attackers, k=2)
-        defBans = random.sample(self.defenders, k=2)
+        attackers, defenders = self._getOperators().values()
+        attBans = random.sample(attackers, k=2)
+        defBans = random.sample(defenders, k=2)
         return attBans, defBans
 
     def banOperators(self, inputString, ban=True):
         """Removes the given operators from the list of available operators, and returns the sanitized list of operators."""
+        attackers, defenders = self._getOperators().values()
         input_names = re.split(r'\W+\s*', inputString)
 
         if not input_names or all(name == '' for name in input_names):
@@ -123,7 +147,7 @@ class RainbowMatch:
 
         sanitized_names = []
         for name in input_names:
-            match, score = process.extractOne(name, self.attackers + self.defenders) if ban else process.extractOne(name, self.bannedOperators)
+            match, score = process.extractOne(name, attackers + defenders) if ban else process.extractOne(name, self.bannedOperators)
             if score >= 75:
                 sanitized_names.append(match)
             else:
@@ -131,9 +155,9 @@ class RainbowMatch:
 
         for op in sanitized_names:
             if ban:
-                if op in self.attackers:
+                if op in attackers:
                     self.bannedOperators.append(op)
-                elif op in self.defenders:
+                elif op in defenders:
                     self.bannedOperators.append(op)
             else:
                 if op in self.bannedOperators:
@@ -168,7 +192,8 @@ class RainbowMatch:
 
     def getPlayedOperators(self, side):
         """Returns a random list of operators for the specified side, excluding any banned operators."""
-        available_operators = [op for op in (self.attackers if side == "attack" else self.defenders) if op not in self.bannedOperators]
+        attackers, defenders = self._getOperators().values()
+        available_operators = [op for op in (attackers if side == "attack" else defenders) if op not in self.bannedOperators]
         return random.sample(available_operators, k=min(5, len(available_operators)))
 
     def resolveRound(self, result, overtimeSide):
