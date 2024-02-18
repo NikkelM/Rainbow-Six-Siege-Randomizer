@@ -149,14 +149,13 @@ class RainbowBot(commands.Bot):
 
         @self.command(name='setMap')
         async def _setMap(ctx, *mapName):
-            mapName = ' '.join(mapName)
             await ctx.message.delete()
-
-            if match == None:
-                discordMessage['messageContent']['playersBanner'] = 'No match in progress. Use "**!startMatch**" to start a new match.'
-                await bot._sendMessage(ctx, True)
+            match, discordMessage, canContinue = await self._getMatchData(ctx)
+            if not canContinue:
                 return
+
             discordMessage['messageContent']['actionPrompt'] = ''
+            mapName = ' '.join(mapName)
             couldSetMap = match.setMap(mapName)
             if couldSetMap == 2:
                 discordMessage['messageContent']['playersBanner'] = f"Playing a match with {match.playersString}{' on **' + match.map + '**' if match.map else ''}.\n"
