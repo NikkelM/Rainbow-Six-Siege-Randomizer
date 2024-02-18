@@ -222,9 +222,14 @@ class RainbowBot(commands.Bot):
 
         @self.command(name='another')
         async def _another(ctx):
-            playerIdStrings = [f'<@{player.id}>' for player in self.match.players]
-            self.match = None
-            self.matchMessage = None
+            match, _, canContinue = await self._getMatchData(ctx)
+            if not canContinue:
+                return
+
+            playerIdStrings = [f'<@{player["id"]}>' for player in match.players]
+            self.cursor.execute("DELETE FROM matches WHERE server_id = ?", (str(ctx.guild.id),))
+            self.conn.commit()
+            
             await _startMatch(ctx, *playerIdStrings)
 
         @self.command(name='goodnight')
