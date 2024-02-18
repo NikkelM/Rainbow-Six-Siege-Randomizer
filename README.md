@@ -48,6 +48,6 @@ The bot has the following commands:
 | `!startAttack` | | Starts the match on the attacking side. If called during an ongoing match, shuffles a new attack phase without changing the score. |
 | `!startDefense` | | Starts the match on the defending side. If called during an ongoing match, shuffles a new defense phase without changing the score. |
 | `!won` | `attack` or `defense`, if winning starts overtime | Resolves the ongoing round as won, updating the scores and starting a new round. If winning started overtime, `attack` must be supplied if starting overtime on attack, otherwise `defense`. |
-| `!lost` | `attack` or `defense`, if winning starts overtime | Resolves the ongoing round as lost, updating the scores and starting a new round. If losing started overtime, `attack` must be supplied if starting overtime on attack, otherwise `defense`. |
+| `!lost` | `attack` or `defense`, if losing starts overtime | Resolves the ongoing round as lost, updating the scores and starting a new round. If losing started overtime, `attack` must be supplied if starting overtime on attack, otherwise `defense`. |
 | `!another` | | Starts a new match with the same players. |
 | `!goodnight` | | Ends the session. |
