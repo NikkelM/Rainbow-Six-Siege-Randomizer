@@ -4,7 +4,6 @@ from fuzzywuzzy import process
 
 class RainbowMatch:
     def __init__(self):
-        self.attackers, self.defenders = self._getOperators().values()
         self.bannedOperators = []
         self.map = None
         self.sites = self._resetSites()
@@ -110,12 +109,14 @@ class RainbowMatch:
 
     def getOperatorBanChoices(self):
         """Returns a choice of operators that should be banned, two for each side (main and backup)."""
-        attBans = random.sample(self.attackers, k=2)
-        defBans = random.sample(self.defenders, k=2)
+        attackers, defenders = self._getOperators().values()
+        attBans = random.sample(attackers, k=2)
+        defBans = random.sample(defenders, k=2)
         return attBans, defBans
 
     def banOperators(self, inputString, ban=True):
         """Removes the given operators from the list of available operators, and returns the sanitized list of operators."""
+        attackers, defenders = self._getOperators().values()
         input_names = re.split(r'\W+\s*', inputString)
 
         if not input_names or all(name == '' for name in input_names):
@@ -123,7 +124,7 @@ class RainbowMatch:
 
         sanitized_names = []
         for name in input_names:
-            match, score = process.extractOne(name, self.attackers + self.defenders) if ban else process.extractOne(name, self.bannedOperators)
+            match, score = process.extractOne(name, attackers + defenders) if ban else process.extractOne(name, self.bannedOperators)
             if score >= 75:
                 sanitized_names.append(match)
             else:
@@ -131,9 +132,9 @@ class RainbowMatch:
 
         for op in sanitized_names:
             if ban:
-                if op in self.attackers:
+                if op in attackers:
                     self.bannedOperators.append(op)
-                elif op in self.defenders:
+                elif op in defenders:
                     self.bannedOperators.append(op)
             else:
                 if op in self.bannedOperators:
@@ -168,7 +169,8 @@ class RainbowMatch:
 
     def getPlayedOperators(self, side):
         """Returns a random list of operators for the specified side, excluding any banned operators."""
-        available_operators = [op for op in (self.attackers if side == "attack" else self.defenders) if op not in self.bannedOperators]
+        attackers, defenders = self._getOperators().values()
+        available_operators = [op for op in (attackers if side == "attack" else defenders) if op not in self.bannedOperators]
         return random.sample(available_operators, k=min(5, len(available_operators)))
 
     def resolveRound(self, result, overtimeSide):
