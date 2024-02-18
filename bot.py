@@ -68,7 +68,7 @@ class RainbowBot(commands.Bot):
                     return
             else:
                 discordMessage['messageContent']['playersBanner'] = 'You can start a match using "**!startMatch @player1 @player2...**".'
-                await bot._sendMessage(ctx, discordMessage)
+                await bot._sendMessage(ctx, discordMessage, True)
                 return
 
             discordMessage['messageContent']['matchMetadata'] = f'Ban the **{match.getMapBan()}** map in rotation, and these operators:\n'
@@ -85,26 +85,26 @@ class RainbowBot(commands.Bot):
 
         @self.command(name='addPlayers')
         async def _addPlayers(ctx, *playerNames):
-            await ctx.message.delete()
             match, discordMessage, canContinue = await self._getMatchData(ctx)
             if not canContinue:
                 return
+            await ctx.message.delete()
 
             if len(playerNames) + len(match.players) > 5:
-                discordMessage['messageContent']['playersBanner'] = f'A match can only have up to **five** players! **!removePlayers** first if you need to. Current players are {match.playersString}.\n'
+                discordMessage['messageContent']['playersBanner'] = f"A match can only have up to **five** players! **!removePlayers** first if you need to. Current players are {match.playersString}{', playing on **' + match.map + '**' if match.map else ''}.\n"
                 await bot._sendMessage(ctx, discordMessage)
                 return
             elif len(playerNames) > 0:
                 playerObjects = self._validatePlayerNames(ctx, playerNames)
                 if playerObjects is not None:
                     match.setPlayers(playerObjects + match.players)
-                    discordMessage['messageContent']['playersBanner'] = f"Player{'s' if len(playerNames) > 1 else ''} added! Current players are {match.playersString}.\n"
+                    discordMessage['messageContent']['playersBanner'] = f"Player{'s' if len(playerNames) > 1 else ''} added! Current players are {match.playersString}{', playing on **' + match.map + '**' if match.map else ''}.\n"
                 else:
-                    discordMessage['messageContent']['playersBanner'] = f'At least one of the players you mentioned is not on this server. Current players are {match.playersString}.\n'
+                    discordMessage['messageContent']['playersBanner'] = f"At least one of the players you mentioned is not on this server. Current players are {match.playersString}{', playing on **' + match.map + '**' if match.map else ''}.\n"
                     await bot._sendMessage(ctx, discordMessage)
                     return
             else:
-                discordMessage['messageContent']['playersBanner'] = f'No new player passed with the command. Current players are {match.playersString}.\n'
+                discordMessage['messageContent']['playersBanner'] = f"No new player passed with the command. Current players are {match.playersString}{', playing on **' + match.map + '**' if match.map else ''}.\n"
                 await bot._sendMessage(ctx, discordMessage)
                 return
 
@@ -113,26 +113,26 @@ class RainbowBot(commands.Bot):
 
         @self.command(name='removePlayers')
         async def _removePlayers(ctx, *playerNames):
-            await ctx.message.delete()
             match, discordMessage, canContinue = await self._getMatchData(ctx)
             if not canContinue:
                 return
+            await ctx.message.delete()
 
             if len(playerNames) > 0:
                 playerObjects = self._validatePlayerNames(ctx, playerNames)
                 if playerObjects is not None:
                     removalSuccessful = match.removePlayers(playerObjects)
                     if not removalSuccessful:
-                        discordMessage['messageContent']['playersBanner'] = f'You cannot remove all players from the match! Current players are {match.playersString}.\n'
+                        discordMessage['messageContent']['playersBanner'] = f"You cannot remove all players from the match! Current players are {match.playersString}{', playing on **' + match.map + '**' if match.map else ''}.\n"
                         await bot._sendMessage(ctx, discordMessage)
                         return
-                    discordMessage['messageContent']['playersBanner'] = f"Player{'s' if len(playerNames) > 1 else ''} removed! Current players are {match.playersString}.\n"
+                    discordMessage['messageContent']['playersBanner'] = f"Player{'s' if len(playerNames) > 1 else ''} removed! Current players are {match.playersString}{', playing on **' + match.map + '**' if match.map else ''}.\n"
                 else:
-                    discordMessage['messageContent']['playersBanner'] = f'At least one of the players you mentioned is not on this server. Current players are {match.playersString}.\n'
+                    discordMessage['messageContent']['playersBanner'] = f"At least one of the players you mentioned is not on this server. Current players are {match.playersString}{', playing on **' + match.map + '**' if match.map else ''}.\n"
                     await bot._sendMessage(ctx, discordMessage)
                     return
             else:
-                discordMessage['messageContent']['playersBanner'] = f'No player removed. Current players are {match.playersString}.\n'
+                discordMessage['messageContent']['playersBanner'] = f"No player removed. Current players are {match.playersString}{', playing on **' + match.map + '**' if match.map else ''}.\n"
                 await bot._sendMessage(ctx, discordMessage)
                 return
 
@@ -149,10 +149,10 @@ class RainbowBot(commands.Bot):
 
         @self.command(name='setMap')
         async def _setMap(ctx, *mapName):
-            await ctx.message.delete()
             match, discordMessage, canContinue = await self._getMatchData(ctx)
             if not canContinue:
                 return
+            await ctx.message.delete()
 
             discordMessage['messageContent']['actionPrompt'] = ''
             mapName = ' '.join(mapName)
@@ -187,7 +187,11 @@ class RainbowBot(commands.Bot):
 
         @self.command(name='won')
         async def _won(ctx, overtimeSide=None):
+            match, discordMessage, canContinue = await self._getMatchData(ctx)
+            if not canContinue:
+                return
             await ctx.message.delete()
+
             if not match.playingOnSide:
                 discordMessage['messageContent']['actionPrompt'] = 'You must specify what side you start on. Use **!startAttack** or **!startDefense**.'
                 await bot._sendMessage(ctx, discordMessage)
@@ -198,14 +202,23 @@ class RainbowBot(commands.Bot):
                     discordMessage['messageContent']['actionPrompt'] = 'You must specify what side you start overtime on. Use **!won attack** or **!won defense**.'
                     await bot._sendMessage(ctx, discordMessage)
                     return
+
             if match.resolveRound('won', overtimeSide):
+                self._saveMatch(ctx, match)
+                self._saveDiscordMessage(ctx, discordMessage)
                 await self._playRound(ctx)
             else:
+                self._saveMatch(ctx, match)
+                self._saveDiscordMessage(ctx, discordMessage)
                 await self._endMatch(ctx)
 
         @self.command(name='lost')
         async def _lost(ctx, overtimeSide=None):
+            match, discordMessage, canContinue = await self._getMatchData(ctx)
+            if not canContinue:
+                return
             await ctx.message.delete()
+
             if not match.playingOnSide:
                 discordMessage['messageContent']['actionPrompt'] = 'You must specify what side you start on. Use **!startAttack** or **!startDefense**.'
                 await bot._sendMessage(ctx, discordMessage)
@@ -216,9 +229,14 @@ class RainbowBot(commands.Bot):
                     discordMessage['messageContent']['actionPrompt'] = 'You must specify what side you start overtime on. Use **!lost attack** or **!lost defense**.'
                     await bot._sendMessage(ctx, discordMessage)
                     return
+
             if match.resolveRound('lost', overtimeSide):
+                self._saveMatch(ctx, match)
+                self._saveDiscordMessage(ctx, discordMessage)
                 await self._playRound(ctx)
             else:
+                self._saveMatch(ctx, match)
+                self._saveDiscordMessage(ctx, discordMessage)
                 await self._endMatch(ctx)
 
         @self.command(name='another')
@@ -235,10 +253,10 @@ class RainbowBot(commands.Bot):
 
         @self.command(name='goodnight')
         async def _goodnight(ctx):
-            await ctx.message.delete()
             match, discordMessage, canContinue = await self._getMatchData(ctx)
             if not canContinue:
                 return
+            await ctx.message.delete()
 
             discordMessage['messageContent']['playersBanner'] = f"Finished a match with {match.playersString}{' on **' + match.map + '**' if match.map else ''}.\n"
             discordMessage['messageContent']['roundMetadata'] = ''
@@ -255,10 +273,10 @@ class RainbowBot(commands.Bot):
             self.conn.commit()
 
     async def _banUnban(self, ctx, *args, ban=True):
-        await ctx.message.delete()
         match, discordMessage, canContinue = await self._getMatchData(ctx)
         if not canContinue:
             return
+        await ctx.message.delete()
 
         bans = ' '.join(args)
         sanitizedBans = match.banOperators(bans, ban)
@@ -287,8 +305,12 @@ class RainbowBot(commands.Bot):
         await bot._sendMessage(ctx, discordMessage)
 
     async def _playMatch(self, ctx, side):
+        match, discordMessage, canContinue = await self._getMatchData(ctx)
+        if not canContinue:
+            return
+
         if match == None:
-            discordMessage['messageContent']['playersBanner'] = 'No match in progress. Use "**!startMatch**" to start a new match.'
+            discordMessage['messageContent']['playersBanner'] = 'No match in progress. Use "**!startMatch @player1 @player2...**" to start a new match.'
             await bot._sendMessage(ctx, True)
             return
         
@@ -303,9 +325,15 @@ class RainbowBot(commands.Bot):
         if match.currRound == 0:
                 match.currRound = 1
 
+        self._saveMatch(ctx, match)
+        self._saveDiscordMessage(ctx, discordMessage)
         await self._playRound(ctx)
 
     async def _playRound(self, ctx):
+        match, discordMessage, canContinue = await self._getMatchData(ctx)
+        if not canContinue:
+            return
+
         discordMessage['messageContent']['playersBanner'] = f"Playing a match with {match.playersString}{' on **' + match.map + '**' if match.map else ''}.\n"
         discordMessage['messageContent']['matchScore'] = f'The score is **{match.scores["blue"]}**:**{match.scores["red"]}**, we are playing on **{match.playingOnSide}**.\n'
         discordMessage['messageContent']['roundMetadata'] = f'Here is your lineup for round {match.currRound}:'
@@ -318,7 +346,7 @@ class RainbowBot(commands.Bot):
         discordMessage['messageContent']['roundLineup'] = ''
         operators_copy = operators.copy()
         for player, operator in zip(match.players, operators_copy):
-            discordMessage['messageContent']['roundLineup'] += f'{player.mention} plays **{operator}**\n'
+            discordMessage['messageContent']['roundLineup'] += f'{player["mention"]} plays **{operator}**\n'
             operators.remove(operator)
         
         if(operators):
@@ -335,6 +363,10 @@ class RainbowBot(commands.Bot):
         await bot._sendMessage(ctx, discordMessage)
 
     async def _endMatch(self, ctx):
+        match, discordMessage, canContinue = await self._getMatchData(ctx)
+        if not canContinue:
+            return
+
         discordMessage['messageContent']['roundMetadata'] = ''
         discordMessage['messageContent']['roundLineup'] = ''
         discordMessage['messageContent']['playersBanner'] = f"Finished a match with {match.playersString}{' on **' + match.map + '**' if match.map else ''}.\n"
@@ -375,7 +407,6 @@ class RainbowBot(commands.Bot):
         }
 
     async def _sendMessage(self, ctx, discordMessage, forgetMessage=False):
-        serverId = str(ctx.guild.id)
         message = '\n'.join([v for v in discordMessage['messageContent'].values() if v != ''])
 
         if discordMessage['matchMessageId']:
@@ -387,9 +418,7 @@ class RainbowBot(commands.Bot):
             self._resetDiscordMessage(ctx)
             return
 
-        discordMessage = json.dumps(discordMessage)
-        self.cursor.execute("UPDATE matches SET discord_message = ? WHERE server_id = ?", (discordMessage, serverId))
-        self.conn.commit()
+        self._saveDiscordMessage(ctx, discordMessage)
     
     def _saveMatch(self, ctx, match):
         serverId = str(ctx.guild.id)
@@ -397,17 +426,26 @@ class RainbowBot(commands.Bot):
         self.cursor.execute("UPDATE matches SET match_data = ? WHERE server_id = ?", (matchData, serverId))
         self.conn.commit()
 
+    def _saveDiscordMessage(self, ctx, discordMessage):
+        serverId = str(ctx.guild.id)
+        discordMessage = json.dumps(discordMessage)
+        self.cursor.execute("UPDATE matches SET discord_message = ? WHERE server_id = ?", (discordMessage, serverId))
+        self.conn.commit()
+
     async def _getMatchData(self, ctx):
         serverId = str(ctx.guild.id)
+        matchData, discordMessage = None, None
         result = self.cursor.execute("SELECT match_data, discord_message FROM matches WHERE server_id = ?", (serverId,)).fetchone()
 
         if result is not None:
             matchData, discordMessage = result
             matchData = json.loads(matchData) if matchData is not None else None
             discordMessage = json.loads(discordMessage) if discordMessage is not None else self._resetDiscordMessage(ctx)
+        else:
+            discordMessage = self._resetDiscordMessage(ctx)
 
         if matchData is None:
-            discordMessage['messageContent']['playersBanner'] = 'No match in progress. Use "**!startMatch**" to start a new match.'
+            discordMessage['messageContent']['playersBanner'] = 'No match in progress. Use "**!startMatch @player1 @player2...**" to start a new match.'
             await bot._sendMessage(ctx, discordMessage, True)
             return None, None, False
 
