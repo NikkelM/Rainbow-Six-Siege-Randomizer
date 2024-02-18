@@ -76,35 +76,43 @@ class RainbowBot(commands.Bot):
 
             discordMessage['messageContent']['actionPrompt'] = 'Next, use "**!setMap map**" and "**!ban op1 op2...**"'
 
-            match_data = json.dumps(match.__dict__)
-            self.cursor.execute("UPDATE matches SET match_data = ? WHERE server_id = ?", (match_data, serverId))
-            self.conn.commit()
-
+            self._saveMatch(serverId, match)
             await bot._sendMessage(ctx, discordMessage)
 
         @self.command(name='addPlayers')
         async def _addPlayers(ctx, *playerNames):
             await ctx.message.delete()
-            if self.match == None:
-                self.messageContent['playersBanner'] = 'No match in progress. Use "**!startMatch**" to start a new match.'
-                await bot._sendMessage(ctx, True)
+            serverId = str(ctx.guild.id)
+            result = self.cursor.execute("SELECT match_data, discord_message FROM matches WHERE server_id = ?", (serverId,)).fetchone()
+
+            if result is not None:
+                matchData, discordMessage = result
+                matchData = json.loads(matchData) if matchData is not None else None
+                discordMessage = json.loads(discordMessage) if discordMessage is not None else self._resetDiscordMessage(ctx)
+
+            if matchData is None:
+                discordMessage['messageContent']['playersBanner'] = 'No match in progress. Use "**!startMatch**" to start a new match.'
+                await bot._sendMessage(ctx, discordMessage, True)
                 return
+
+            match = RainbowMatch(matchData)
 
             if len(playerNames) > 0:
                 playerObjects = self._validatePlayerNames(ctx, playerNames)
                 if playerObjects is not None:
-                    self.match.setPlayers(playerObjects + self.match.players)
-                    self.messageContent['playersBanner'] = f"Player{'s' if len(playerNames) > 1 else ''} added! Current players are {self.match.playersString}.\n"
+                    match.setPlayers(playerObjects + match.players)
+                    discordMessage['messageContent']['playersBanner'] = f"Player{'s' if len(playerNames) > 1 else ''} added! Current players are {match.playersString}.\n"
                 else:
-                    self.messageContent['playersBanner'] = f'At least one of the players you mentioned is not on this server. Current players are {self.match.playersString}.\n'
-                    await bot._sendMessage(ctx)
+                    discordMessage['messageContent']['playersBanner'] = f'At least one of the players you mentioned is not on this server. Current players are {match.playersString}.\n'
+                    await bot._sendMessage(ctx, discordMessage)
                     return
             else:
-                self.messageContent['playersBanner'] = f'No new player set. Current players are {self.match.playersString}.\n'
-                await bot._sendMessage(ctx)
+                discordMessage['messageContent']['playersBanner'] = f'No new player passed with the command. Current players are {match.playersString}.\n'
+                await bot._sendMessage(ctx, discordMessage)
                 return
 
-            await bot._sendMessage(ctx)
+            self._saveMatch(serverId, match)
+            await bot._sendMessage(ctx, discordMessage)
 
         @self.command(name='removePlayers')
         async def _removePlayers(ctx, *playerNames):
@@ -372,6 +380,14 @@ class RainbowBot(commands.Bot):
         discordMessage = json.dumps(discordMessage)
         self.cursor.execute("UPDATE matches SET discord_message = ? WHERE server_id = ?", (discordMessage, serverId))
         self.conn.commit()
+    
+    def _saveMatch(self, serverId, match):
+        matchData = json.dumps(match.__dict__)
+        self.cursor.execute("UPDATE matches SET match_data = ? WHERE server_id = ?", (matchData, serverId))
+        self.conn.commit()
+
+    def __del__(self):
+        self.conn.close()
 
 if __name__ == "__main__":
     bot = RainbowBot()
