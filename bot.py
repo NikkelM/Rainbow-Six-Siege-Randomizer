@@ -108,7 +108,6 @@ class RainbowBot(commands.Bot):
                 await bot._sendMessage(ctx)
                 return
 
-            print(self.match.players)
             await bot._sendMessage(ctx)
 
         @self.command(name='removePlayers')
@@ -234,7 +233,6 @@ class RainbowBot(commands.Bot):
             self.messageContent['roundMetadata'] = ''
             self.messageContent['roundLineup'] = ''
             self.messageContent['matchMetadata'] = 'Ending the session here... '
-            # If we lost or won, add to the message
             if self.match.scores["blue"] > self.match.scores["red"]:
                 self.messageContent['matchMetadata'] += 'better to end on a high note!'
             else:
