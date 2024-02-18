@@ -152,27 +152,29 @@ class RainbowBot(commands.Bot):
             mapName = ' '.join(mapName)
             await ctx.message.delete()
 
-            if self.match == None:
-                self.messageContent['playersBanner'] = 'No match in progress. Use "**!startMatch**" to start a new match.'
+            if match == None:
+                discordMessage['messageContent']['playersBanner'] = 'No match in progress. Use "**!startMatch**" to start a new match.'
                 await bot._sendMessage(ctx, True)
                 return
-            self.messageContent['actionPrompt'] = ''
-            couldSetMap = self.match.setMap(mapName)
+            discordMessage['messageContent']['actionPrompt'] = ''
+            couldSetMap = match.setMap(mapName)
             if couldSetMap == 2:
-                self.messageContent['playersBanner'] = f"Playing a match with {self.match.playersString}{' on **' + self.match.map + '**' if self.match.map else ''}.\n"
+                discordMessage['messageContent']['playersBanner'] = f"Playing a match with {match.playersString}{' on **' + match.map + '**' if match.map else ''}.\n"
             elif couldSetMap == 1:
-                self.messageContent['actionPrompt'] += f'**{mapName}** is not a valid map. Use "**!setMap map**" to try again.\n'
+                discordMessage['messageContent']['actionPrompt'] += f'**{mapName}** is not a valid map. Use "**!setMap map**" to try again.\n'
             else:
-                self.messageContent['actionPrompt'] += f'A map has already been set, you cannot change it anymore. Use "**!another**" to restart the match.\n'
+                discordMessage['messageContent']['actionPrompt'] += f'A map has already been set, you cannot change it anymore. Use "**!another**" to restart the match.\n'
 
-            if self.match.currRound == 0:
-                if not self.match.bannedOperators:
-                    self.messageContent['actionPrompt'] += 'Use "**!ban op1 op2...**" or use "**!startAttack**" or "**!startDefense**" to start the match.'
+            if match.currRound == 0:
+                if not match.bannedOperators:
+                    discordMessage['messageContent']['actionPrompt'] += 'Use "**!ban op1 op2...**" or use "**!startAttack**" or "**!startDefense**" to start the match.'
                 else:
-                    self.messageContent['actionPrompt'] += 'Use "**!startAttack**" or "**!startDefense**" to start the match.'
+                    discordMessage['messageContent']['actionPrompt'] += 'Use "**!startAttack**" or "**!startDefense**" to start the match.'
             else:
-                self.messageContent['actionPrompt'] += 'Use "**!won**" or "**!lost**" to continue.'
-            await bot._sendMessage(ctx)
+                discordMessage['messageContent']['actionPrompt'] += 'Use "**!won**" or "**!lost**" to continue.'
+
+            self._saveMatch(ctx, match)
+            await bot._sendMessage(ctx, discordMessage)
 
         @self.command(name='startAttack')
         async def _startAttack(ctx):
@@ -187,17 +189,17 @@ class RainbowBot(commands.Bot):
         @self.command(name='won')
         async def _won(ctx, overtimeSide=None):
             await ctx.message.delete()
-            if not self.match.playingOnSide:
-                self.messageContent['actionPrompt'] = 'You must specify what side you start on. Use **!startAttack** or **!startDefense**.'
-                await bot._sendMessage(ctx)
+            if not match.playingOnSide:
+                discordMessage['messageContent']['actionPrompt'] = 'You must specify what side you start on. Use **!startAttack** or **!startDefense**.'
+                await bot._sendMessage(ctx, discordMessage)
                 return
 
-            if (self.match.currRound == 6 and self.match.scores["red"] == 3):
+            if (match.currRound == 6 and match.scores["red"] == 3):
                 if not overtimeSide:
-                    self.messageContent['actionPrompt'] = 'You must specify what side you start overtime on. Use **!won attack** or **!won defense**.'
-                    await bot._sendMessage(ctx)
+                    discordMessage['messageContent']['actionPrompt'] = 'You must specify what side you start overtime on. Use **!won attack** or **!won defense**.'
+                    await bot._sendMessage(ctx, discordMessage)
                     return
-            if self.match.resolveRound('won', overtimeSide):
+            if match.resolveRound('won', overtimeSide):
                 await self._playRound(ctx)
             else:
                 await self._endMatch(ctx)
@@ -205,17 +207,17 @@ class RainbowBot(commands.Bot):
         @self.command(name='lost')
         async def _lost(ctx, overtimeSide=None):
             await ctx.message.delete()
-            if not self.match.playingOnSide:
-                self.messageContent['actionPrompt'] = 'You must specify what side you start on. Use **!startAttack** or **!startDefense**.'
-                await bot._sendMessage(ctx)
+            if not match.playingOnSide:
+                discordMessage['messageContent']['actionPrompt'] = 'You must specify what side you start on. Use **!startAttack** or **!startDefense**.'
+                await bot._sendMessage(ctx, discordMessage)
                 return
 
-            if (self.match.currRound == 6 and self.match.scores["blue"] == 3):
+            if (match.currRound == 6 and match.scores["blue"] == 3):
                 if not overtimeSide:
-                    self.messageContent['actionPrompt'] = 'You must specify what side you start overtime on. Use **!lost attack** or **!lost defense**.'
-                    await bot._sendMessage(ctx)
+                    discordMessage['messageContent']['actionPrompt'] = 'You must specify what side you start overtime on. Use **!lost attack** or **!lost defense**.'
+                    await bot._sendMessage(ctx, discordMessage)
                     return
-            if self.match.resolveRound('lost', overtimeSide):
+            if match.resolveRound('lost', overtimeSide):
                 await self._playRound(ctx)
             else:
                 await self._endMatch(ctx)
@@ -255,89 +257,93 @@ class RainbowBot(commands.Bot):
 
     async def _banUnban(self, ctx, *args, ban=True):
         await ctx.message.delete()
-        if self.match == None:
-            self.messageContent['playersBanner'] = 'No match in progress. Use "**!startMatch**" to start a new match.'
-            await bot._sendMessage(ctx, True)
+        match, discordMessage, canContinue = await self._getMatchData(ctx)
+        if not canContinue:
             return
 
         bans = ' '.join(args)
-        sanitizedBans = self.match.banOperators(bans, ban)
+        sanitizedBans = match.banOperators(bans, ban)
 
-        if self.match.bannedOperators == []:
-            self.messageContent['matchMetadata'] = 'No operators are banned in this match.\n'
+        if match.bannedOperators == []:
+            discordMessage['messageContent']['matchMetadata'] = 'No operators are banned in this match.\n'
         else:
-            self.messageContent['matchMetadata'] = f'The following operators are banned in this match:\n{", ".join([f"**{op}**" for op in self.match.bannedOperators])}\n'
+            discordMessage['messageContent']['matchMetadata'] = f'The following operators are banned in this match:\n{", ".join([f"**{op}**" for op in match.bannedOperators])}\n'
             unrecognizedBans = [ban for ban in zip(sanitizedBans, args) if ban[0] is None]
             if len(unrecognizedBans) > 0:
                 if ban:
-                    self.messageContent['matchMetadata'] += f'The following operators were not recognized:\n{", ".join([f"**{ban[1]}**" for ban in unrecognizedBans])}\n'
+                    discordMessage['messageContent']['matchMetadata'] += f'The following operators were not recognized:\n{", ".join([f"**{ban[1]}**" for ban in unrecognizedBans])}\n'
                 else:
-                    self.messageContent['matchMetadata'] += f'The following operators were not recognized, or not banned:\n{", ".join([f"**{ban[1]}**" for ban in unrecognizedBans])}\n'
+                    discordMessage['messageContent']['matchMetadata'] += f'The following operators were not recognized, or not banned:\n{", ".join([f"**{ban[1]}**" for ban in unrecognizedBans])}\n'
 
-        if self.match.currRound == 0:
-            self.messageContent['actionPrompt'] = ''
-            if not self.match.map:
-                self.messageContent['actionPrompt'] += 'Next, use "**!setMap map**" to set the map.\n'
-            self.messageContent['actionPrompt'] += 'You can also "**!ban**" or "**!unban**" more operators.\n'
-            self.messageContent['actionPrompt'] += 'Use "**!startAttack**" or "**!startDefense**" to start the match.'
+        if match.currRound == 0:
+            discordMessage['messageContent']['actionPrompt'] = ''
+            if not match.map:
+                discordMessage['messageContent']['actionPrompt'] += 'Next, use "**!setMap map**" to set the map.\n'
+            discordMessage['messageContent']['actionPrompt'] += 'You can also "**!ban**" or "**!unban**" more operators.\n'
+            discordMessage['messageContent']['actionPrompt'] += 'Use "**!startAttack**" or "**!startDefense**" to start the match.'
         else:
-            self.messageContent['actionPrompt'] = 'Use "**!won**" or "**!lost**" to continue.'
-        await bot._sendMessage(ctx)
+            discordMessage['messageContent']['actionPrompt'] = 'Use "**!won**" or "**!lost**" to continue.'
+
+        self._saveMatch(ctx, match)
+        await bot._sendMessage(ctx, discordMessage)
 
     async def _playMatch(self, ctx, side):
-        if self.match == None:
-            self.messageContent['playersBanner'] = 'No match in progress. Use "**!startMatch**" to start a new match.'
+        if match == None:
+            discordMessage['messageContent']['playersBanner'] = 'No match in progress. Use "**!startMatch**" to start a new match.'
             await bot._sendMessage(ctx, True)
             return
         
-        self.messageContent['playersBanner'] = f"Playing a match with {self.match.playersString}{' on **' + self.match.map + '**' if self.match.map else ''}.\n"
-        self.messageContent['matchMetadata'] = ''
+        discordMessage['messageContent']['playersBanner'] = f"Playing a match with {match.playersString}{' on **' + match.map + '**' if match.map else ''}.\n"
+        discordMessage['messageContent']['matchMetadata'] = ''
         
         if side == 'attack':
-            self.match.playingOnSide = 'attack'
+            match.playingOnSide = 'attack'
         else:
-            self.match.playingOnSide = 'defense'
+            match.playingOnSide = 'defense'
 
-        if self.match.currRound == 0:
-                self.match.currRound = 1
+        if match.currRound == 0:
+                match.currRound = 1
 
         await self._playRound(ctx)
 
     async def _playRound(self, ctx):
-        self.messageContent['playersBanner'] = f"Playing a match with {self.match.playersString}{' on **' + self.match.map + '**' if self.match.map else ''}.\n"
-        self.messageContent['matchScore'] = f'The score is **{self.match.scores["blue"]}**:**{self.match.scores["red"]}**, we are playing on **{self.match.playingOnSide}**.\n'
-        self.messageContent['roundMetadata'] = f'Here is your lineup for round {self.match.currRound}:'
+        discordMessage['messageContent']['playersBanner'] = f"Playing a match with {match.playersString}{' on **' + match.map + '**' if match.map else ''}.\n"
+        discordMessage['messageContent']['matchScore'] = f'The score is **{match.scores["blue"]}**:**{match.scores["red"]}**, we are playing on **{match.playingOnSide}**.\n'
+        discordMessage['messageContent']['roundMetadata'] = f'Here is your lineup for round {match.currRound}:'
 
-        operators = self.match.getPlayedOperators(self.match.playingOnSide)
-        if self.match.playingOnSide == 'defense':
-            site = self.match.getPlayedSite()
-            self.messageContent['roundMetadata'] += f'\nChoose the **{site}** site.'
+        operators = match.getPlayedOperators(match.playingOnSide)
+        if match.playingOnSide == 'defense':
+            site = match.getPlayedSite()
+            discordMessage['messageContent']['roundMetadata'] += f'\nChoose the **{site}** site.'
 
-        self.messageContent['roundLineup'] = ''
+        discordMessage['messageContent']['roundLineup'] = ''
         operators_copy = operators.copy()
-        for player, operator in zip(self.match.players, operators_copy):
-            self.messageContent['roundLineup'] += f'{player.mention} plays **{operator}**\n'
+        for player, operator in zip(match.players, operators_copy):
+            discordMessage['messageContent']['roundLineup'] += f'{player.mention} plays **{operator}**\n'
             operators.remove(operator)
         
         if(operators):
-            self.messageContent['roundLineup'] += f'Backup operators: **{", ".join(operators)}**\n'
+            discordMessage['messageContent']['roundLineup'] += f'Backup operators: **{", ".join(operators)}**\n'
 
-        if self.match.currRound != 6:
-            self.messageContent['actionPrompt'] = 'Use "**!won**" or "**!lost**" to continue.'
-        elif self.match.scores["red"] == 3:
-            self.messageContent['actionPrompt'] = 'If you won, use "**!won attack**" (or "**!won defense**") to start overtime on the specified side, otherwise use **!lost** to end the match.'
-        elif self.match.scores["blue"] == 3:
-            self.messageContent['actionPrompt'] = 'If you lost, use "**!lost attack**" (or "**!lost defense**") to start overtime on the specified side, otherwise use **!won** to end the match.'
+        if match.currRound != 6:
+            discordMessage['messageContent']['actionPrompt'] = 'Use "**!won**" or "**!lost**" to continue.'
+        elif match.scores["red"] == 3:
+            discordMessage['messageContent']['actionPrompt'] = 'If you won, use "**!won attack**" (or "**!won defense**") to start overtime on the specified side, otherwise use **!lost** to end the match.'
+        elif match.scores["blue"] == 3:
+            discordMessage['messageContent']['actionPrompt'] = 'If you lost, use "**!lost attack**" (or "**!lost defense**") to start overtime on the specified side, otherwise use **!won** to end the match.'
 
-        await bot._sendMessage(ctx)
+        self._saveMatch(ctx, match)
+        await bot._sendMessage(ctx, discordMessage)
 
     async def _endMatch(self, ctx):
-        self.messageContent['roundMetadata'] = ''
-        self.messageContent['roundLineup'] = ''
-        self.messageContent['playersBanner'] = f"Finished a match with {self.match.playersString}{' on **' + self.match.map + '**' if self.match.map else ''}.\n"
-        self.messageContent['matchScore'] = f'The match is over! The final score was **{self.match.scores["blue"]}**:**{self.match.scores["red"]}**.'
-        self.messageContent['actionPrompt'] = 'Use "**!another**" to start a new match with the same players or "**!goodnight**" to end the session.'
-        await bot._sendMessage(ctx)
+        discordMessage['messageContent']['roundMetadata'] = ''
+        discordMessage['messageContent']['roundLineup'] = ''
+        discordMessage['messageContent']['playersBanner'] = f"Finished a match with {match.playersString}{' on **' + match.map + '**' if match.map else ''}.\n"
+        discordMessage['messageContent']['matchScore'] = f'The match is over! The final score was **{match.scores["blue"]}**:**{match.scores["red"]}**.'
+        discordMessage['messageContent']['actionPrompt'] = 'Use "**!another**" to start a new match with the same players or "**!goodnight**" to end the session.'
+
+        self._saveMatch(ctx, match)
+        await bot._sendMessage(ctx, discordMessage)
 
     def _validatePlayerNames(self, ctx, playerNames):
         playerIds = [re.findall(r'\d+', name) for name in playerNames if name.startswith('<@')]
