@@ -3,16 +3,29 @@ import re
 from fuzzywuzzy import process
 
 class RainbowMatch:
-    def __init__(self):
-        self.bannedOperators = []
-        self.map = None
-        self.sites = self._resetSites()
-        self.playingOnSide = None
-        self.currSite = None
-        self.currRound = 0
-        self.scores = {"blue": 0, "red": 0}
-        self.overtime = False
-        self.players = []
+    def __init__(self, existingMatch=None):
+        if existingMatch:
+            self.bannedOperators = existingMatch['bannedOperators']
+            self.map = existingMatch['map']
+            self.sites = existingMatch['sites']
+            self.playingOnSide = existingMatch['playingOnSide']
+            self.currSite = existingMatch['currSite']
+            self.currRound = existingMatch['currRound']
+            self.scores = existingMatch['scores']
+            self.overtime = existingMatch['overtime']
+            self.players = existingMatch['players']
+            self.playersString = existingMatch['playersString']
+        else:
+            self.bannedOperators = []
+            self.map = None
+            self.sites = self._resetSites()
+            self.playingOnSide = None
+            self.currSite = None
+            self.currRound = 0
+            self.scores = {"blue": 0, "red": 0}
+            self.overtime = False
+            self.players = []
+            self.playersString = ''
 
     def _getOperators(self):
         """Returns a dictionary with the list of attacker and defender operators."""
@@ -72,8 +85,9 @@ class RainbowMatch:
 
     def setPlayers(self, playerNames):
         """Sets the players in the current match."""
-        playerNames = list(set(playerNames))
         for i in range(len(playerNames)):
+            if isinstance(playerNames[i], dict):
+                continue
             player = playerNames[i]
             playerNames[i] = {
                 "mention": player.mention,
@@ -81,10 +95,10 @@ class RainbowMatch:
                 "nick": player.nick,
                 "global_name": player.global_name
             }
-
-        self.players = sorted(playerNames, key=lambda player: player['nick'] if player['nick'] else (player['global_name'] if player['global_name'] else player['name']))
         
-        self.constructPlayersString()
+        playerNames = [dict(t) for t in {tuple(d.items()) for d in playerNames}]
+        self.players = sorted(playerNames, key=lambda player: player['nick'] if player['nick'] else (player['global_name'] if player['global_name'] else player['name']))
+        self._constructPlayersString()
 
     def removePlayers(self, playerNames):
         """Removes the given players from the list of players."""
@@ -97,10 +111,10 @@ class RainbowMatch:
             self.players = originalPlayers
             return False
         
-        self.constructPlayersString()
+        self._constructPlayersString()
         return True
 
-    def constructPlayersString(self):
+    def _constructPlayersString(self):
         """Constructs the string of players for the current match."""
         players = [player['mention'] for player in self.players]
         if len(players) > 1:
