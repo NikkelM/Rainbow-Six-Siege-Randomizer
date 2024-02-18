@@ -73,7 +73,16 @@ class RainbowMatch:
     def setPlayers(self, playerNames):
         """Sets the players in the current match."""
         playerNames = list(set(playerNames))
-        self.players = sorted(playerNames, key=lambda player: player.nick if player.nick else (player.global_name if player.global_name else player.name))
+        for i in range(len(playerNames)):
+            player = playerNames[i]
+            playerNames[i] = {
+                "mention": player.mention,
+                "name": player.name,
+                "nick": player.nick,
+                "global_name": player.global_name
+            }
+
+        self.players = sorted(playerNames, key=lambda player: player['nick'] if player['nick'] else (player['global_name'] if player['global_name'] else player['name']))
         
         self.constructPlayersString()
 
@@ -93,7 +102,7 @@ class RainbowMatch:
 
     def constructPlayersString(self):
         """Constructs the string of players for the current match."""
-        players = [player.mention for player in self.players]
+        players = [player['mention'] for player in self.players]
         if len(players) > 1:
             lastTwoPlayers = ' and '.join(players[-2:])
             otherPlayers = players[:-2]
