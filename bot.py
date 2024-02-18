@@ -230,20 +230,23 @@ class RainbowBot(commands.Bot):
         @self.command(name='goodnight')
         async def _goodnight(ctx):
             await ctx.message.delete()
-            self.messageContent['playersBanner'] = f"Finished a match with {self.match.playersString}{' on **' + self.match.map + '**' if self.match.map else ''}.\n"
-            self.messageContent['roundMetadata'] = ''
-            self.messageContent['roundLineup'] = ''
-            self.messageContent['matchMetadata'] = 'Ending the session here... '
-            if self.match.scores["blue"] > self.match.scores["red"]:
-                self.messageContent['matchMetadata'] += 'better to end on a high note!'
-            else:
-                self.messageContent['matchMetadata'] += 'it\'s not going anywhere, let\'s call it a night.'
-            self.messageContent['actionPrompt'] = 'Use **!startMatch** to start a new match.'
-            await bot._sendMessage(ctx)
+            match, discordMessage, canContinue = await self._getMatchData(ctx)
+            if not canContinue:
+                return
 
-            bot.match = None
-            bot.matchMessage = None
-            self.match = None
+            discordMessage['messageContent']['playersBanner'] = f"Finished a match with {match.playersString}{' on **' + match.map + '**' if match.map else ''}.\n"
+            discordMessage['messageContent']['roundMetadata'] = ''
+            discordMessage['messageContent']['roundLineup'] = ''
+            discordMessage['messageContent']['matchMetadata'] = 'Ending the session here... '
+            if match.scores["blue"] > match.scores["red"]:
+                discordMessage['messageContent']['matchMetadata'] += 'better to end on a high note!'
+            else:
+                discordMessage['messageContent']['matchMetadata'] += 'it\'s not going anywhere, let\'s call it a night.'
+            discordMessage['messageContent']['actionPrompt'] = 'Use **!startMatch** to start a new match.'
+            await bot._sendMessage(ctx, discordMessage)
+
+            self.cursor.execute("DELETE FROM matches WHERE server_id = ?", (str(ctx.guild.id),))
+            self.conn.commit()
 
     async def _banUnban(self, ctx, *args, ban=True):
         await ctx.message.delete()
