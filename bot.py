@@ -9,13 +9,6 @@ load_dotenv()
 TOKEN = os.getenv('DISCORD_BOT_TOKEN')
 
 class RainbowBot(commands.Bot):
-    stateActivityMapping = {
-        "idle": "for !startMatch",
-        "matchInProgress": "you play Siege!",
-        "overtime": "you clutch overtime!",
-        "matchEnded": "for another round!"
-    }
-
     def __init__(self):
         self.match = None
         self.matchMessage = None
@@ -29,8 +22,8 @@ class RainbowBot(commands.Bot):
         self.setupBotCommands()
 
     async def on_ready(self):
-        print(f'We have logged in as {bot.user}')
-        await self._setBotActivity('idle')
+        print(f'Logged in as {bot.user}')
+        await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name='for !startMatch'))
 
     def setupBotCommands(self):
         @self.command(name='startMatch')
@@ -68,7 +61,6 @@ class RainbowBot(commands.Bot):
             self.messageContent['actionPrompt'] = 'Next, use "**!setMap map**" and "**!ban op1 op2...**"'
 
             await bot._sendMessage(ctx)
-            await bot._setBotActivity('matchInProgress')
 
         @self.command(name='addPlayers')
         async def _addPlayers(ctx, *playerNames):
@@ -177,7 +169,6 @@ class RainbowBot(commands.Bot):
                 return
 
             if (self.match.currRound == 6 and self.match.scores["red"] == 3):
-                await bot._setBotActivity('overtime')
                 if not overtimeSide:
                     self.messageContent['actionPrompt'] = 'You must specify what side you start overtime on. Use **!won attack** or **!won defense**.'
                     await bot._sendMessage(ctx)
@@ -185,7 +176,6 @@ class RainbowBot(commands.Bot):
             if self.match.resolveRound('won', overtimeSide):
                 await self._playRound(ctx)
             else:
-                await bot._setBotActivity('matchEnded')
                 await self._endMatch(ctx)
 
         @self.command(name='lost')
@@ -197,7 +187,6 @@ class RainbowBot(commands.Bot):
                 return
 
             if (self.match.currRound == 6 and self.match.scores["blue"] == 3):
-                await bot._setBotActivity('overtime')
                 if not overtimeSide:
                     self.messageContent['actionPrompt'] = 'You must specify what side you start overtime on. Use **!lost attack** or **!lost defense**.'
                     await bot._sendMessage(ctx)
@@ -205,7 +194,6 @@ class RainbowBot(commands.Bot):
             if self.match.resolveRound('lost', overtimeSide):
                 await self._playRound(ctx)
             else:
-                await bot._setBotActivity('matchEnded')
                 await self._endMatch(ctx)
 
         @self.command(name='another')
@@ -233,8 +221,6 @@ class RainbowBot(commands.Bot):
             bot.match = None
             bot.matchMessage = None
             self.match = None
-
-            await bot._setBotActivity('idle')
 
     async def _banUnban(self, ctx, *args, ban=True):
         await ctx.message.delete()
@@ -336,9 +322,6 @@ class RainbowBot(commands.Bot):
                 playerObjects.append(ctx.guild.get_member(int(playerId)))
 
         return playerObjects
-
-    async def _setBotActivity(self, state):
-        await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=self.stateActivityMapping[state]))
 
     def _resetMessageContent(self):
         self.messageContent = {
