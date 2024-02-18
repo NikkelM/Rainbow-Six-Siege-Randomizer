@@ -21,7 +21,6 @@ class RainbowBot(commands.Bot):
                 discord_message TEXT
             )
         """)
-        # TODO: Create table for cross-match statistics
         self.conn.commit()
 
         intents = discord.Intents.default()
