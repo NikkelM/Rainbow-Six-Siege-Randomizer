@@ -10,7 +10,7 @@ TOKEN = os.getenv('DISCORD_BOT_TOKEN')
 
 class RainbowBot(commands.Bot):
     def __init__(self):
-        self.match = None
+        self.match: RainbowMatch = None
         self.matchMessage = None
         self._resetMessageContent()
 
@@ -84,7 +84,6 @@ class RainbowBot(commands.Bot):
                 await bot._sendMessage(ctx)
                 return
 
-            print(self.match.players)
             await bot._sendMessage(ctx)
 
         @self.command(name='removePlayers')
@@ -210,7 +209,6 @@ class RainbowBot(commands.Bot):
             self.messageContent['roundMetadata'] = ''
             self.messageContent['roundLineup'] = ''
             self.messageContent['matchMetadata'] = 'Ending the session here... '
-            # If we lost or won, add to the message
             if self.match.scores["blue"] > self.match.scores["red"]:
                 self.messageContent['matchMetadata'] += 'better to end on a high note!'
             else:
