@@ -152,3 +152,9 @@ docker run -d -p 80:80 -v rainbow-six-siege-discord-bot-database:/app/data gcr.i
 ```
 
 If you've followed all steps correctly, the bot should now be logged in and respond to commands.
+
+Whenever you update the bot, you should rebuild the image and push it to the container registry, then simply restart the VM to have it run the startup script and pull and run the new image.
+
+---
+
+If you enjoy the app and want to say thanks, consider buying me a [coffee](https://ko-fi.com/nikkelm) or [sponsoring](https://github.com/sponsors/NikkelM) this project.
