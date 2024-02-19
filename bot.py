@@ -12,6 +12,7 @@ TOKEN = os.getenv('DISCORD_BOT_TOKEN')
 
 class RainbowBot(commands.Bot):
     def __init__(self):
+        os.makedirs('data', exist_ok=True)
         self.conn = sqlite3.connect("data/rainbowDiscordBot.db")
         self.cursor = self.conn.cursor()
         self.cursor.execute("""
