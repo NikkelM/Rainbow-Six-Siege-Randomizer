@@ -209,9 +209,8 @@ class RainbowMatch:
             self.overtime = True
             self.playingOnSide = overtimeSide
             self.sites = self._resetSites()
-        elif not self.overtime and (self.scores["blue"] == 4 or self.scores["red"] == 4):
-            return False
-        elif self.overtime and (self.scores["blue"] == 5 or self.scores["red"] == 5):
+        
+        if self.isMatchFinished():
             return False
 
         self.currRound += 1
@@ -219,3 +218,9 @@ class RainbowMatch:
             self.playingOnSide = "attack" if self.playingOnSide == "defense" else "defense"
 
         return True
+    
+    def isMatchFinished(self):
+        """Returns True if the match is finished."""
+        if self.overtime:
+            return self.scores["blue"] == 5 or self.scores["red"] == 5
+        return self.scores["blue"] == 4 or self.scores["red"] == 4
