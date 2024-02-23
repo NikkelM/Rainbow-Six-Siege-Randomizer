@@ -389,12 +389,13 @@ class RainbowBot(commands.Bot):
         if(operators):
             discordMessage['messageContent']['roundLineup'] += f'Backup operators: **{", ".join(operators)}**\n'
 
+        discordMessage['messageContent']['actionPrompt'] = 'Use "**!shuffle**" to get new choices.\n'
         if match.currRound != 6:
-            discordMessage['messageContent']['actionPrompt'] = 'Use "**!won**" or "**!lost**" to continue.'
+            discordMessage['messageContent']['actionPrompt'] += 'Use "**!won**" or "**!lost**" to continue.'
         elif match.scores["red"] == 3:
-            discordMessage['messageContent']['actionPrompt'] = 'If you won, use "**!won attack**" (or "**!won defense**") to start overtime on the specified side, otherwise use **!lost** to end the match.'
+            discordMessage['messageContent']['actionPrompt'] += 'If you won, use "**!won attack**" (or "**!won defense**") to start overtime on the specified side, otherwise use **!lost** to end the match.'
         elif match.scores["blue"] == 3:
-            discordMessage['messageContent']['actionPrompt'] = 'If you lost, use "**!lost attack**" (or "**!lost defense**") to start overtime on the specified side, otherwise use **!won** to end the match.'
+            discordMessage['messageContent']['actionPrompt'] += 'If you lost, use "**!lost attack**" (or "**!lost defense**") to start overtime on the specified side, otherwise use **!won** to end the match.'
 
         self._saveMatch(ctx, match)
         await bot._sendMessage(ctx, discordMessage)
