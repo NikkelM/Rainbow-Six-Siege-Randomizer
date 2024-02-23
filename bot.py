@@ -171,21 +171,21 @@ class RainbowBot(commands.Bot):
 
             if match.currRound == 0:
                 if not match.bannedOperators:
-                    discordMessage['messageContent']['actionPrompt'] += 'Use "**!ban op1 op2...**" or use "**!startAttack**" or "**!startDefense**" to start the match.'
+                    discordMessage['messageContent']['actionPrompt'] += 'Use "**!ban op1 op2...**" or use "**!attack**" or "**!defense**" to start the match.'
                 else:
-                    discordMessage['messageContent']['actionPrompt'] += 'Use "**!startAttack**" or "**!startDefense**" to start the match.'
+                    discordMessage['messageContent']['actionPrompt'] += 'Use "**!attack**" or "**!defense**" to start the match.'
             else:
                 discordMessage['messageContent']['actionPrompt'] += 'Use "**!won**" or "**!lost**" to continue.'
 
             self._saveMatch(ctx, match)
             await bot._sendMessage(ctx, discordMessage)
 
-        @self.command(aliases=['startAttack', 'attack'])
+        @self.command(aliases=['attack', 'startAttack'])
         async def _startAttack(ctx):
             await ctx.message.delete()
             await self._playMatch(ctx, 'attack')
 
-        @self.command(aliases=['startDefense', 'defense'])
+        @self.command(aliases=['defense', 'startDefense'])
         async def _startDefense(ctx):
             await ctx.message.delete()
             await self._playMatch(ctx, 'defense')
@@ -198,7 +198,7 @@ class RainbowBot(commands.Bot):
             await ctx.message.delete()
 
             if not match.playingOnSide:
-                discordMessage['messageContent']['actionPrompt'] = 'You must specify what side you start on. Use **!startAttack** or **!startDefense**.'
+                discordMessage['messageContent']['actionPrompt'] = 'You must specify what side you start on. Use **!attack** or **!defense**.'
                 await bot._sendMessage(ctx, discordMessage)
                 return
 
@@ -225,7 +225,7 @@ class RainbowBot(commands.Bot):
             await ctx.message.delete()
 
             if not match.playingOnSide:
-                discordMessage['messageContent']['actionPrompt'] = 'You must specify what side you start on. Use **!startAttack** or **!startDefense**.'
+                discordMessage['messageContent']['actionPrompt'] = 'You must specify what side you start on. Use **!attack** or **!defense**.'
                 await bot._sendMessage(ctx, discordMessage)
                 return
 
@@ -251,11 +251,18 @@ class RainbowBot(commands.Bot):
                 return
             await ctx.message.delete()
 
-            if match.currRound == 0:
-                discordMessage['messageContent']['actionPrompt'] = 'You can only reshuffle the lineup after the first round has started. Use **!startAttack** or **!startDefense** to start the first round.'
+            if match.reshuffles >= 2:
+                discordMessage['messageContent']['actionPrompt'] = 'You cannot reshuffle more than twice per match. Next time, choose more carefully!\nUse **!won** or **!lost** to continue.'
                 await bot._sendMessage(ctx, discordMessage)
                 return
 
+            if match.currRound == 0:
+                discordMessage['messageContent']['actionPrompt'] = 'You can only reshuffle the lineup after the first round has started.\nUse **!attack** or **!defense** to start the first round.'
+                await bot._sendMessage(ctx, discordMessage)
+                return
+
+            match.reshuffles += 1
+            self._saveMatch(ctx, match)
             await self._playRound(ctx)
 
         @self.command(aliases=['another', 'again'])
@@ -334,7 +341,7 @@ class RainbowBot(commands.Bot):
             if not match.map:
                 discordMessage['messageContent']['actionPrompt'] += 'Next, use "**!setMap map**" to set the map.\n'
             discordMessage['messageContent']['actionPrompt'] += 'You can also "**!ban**" or "**!unban**" more operators.\n'
-            discordMessage['messageContent']['actionPrompt'] += 'Use "**!startAttack**" or "**!startDefense**" to start the match.'
+            discordMessage['messageContent']['actionPrompt'] += 'Use "**!attack**" or "**!defense**" to start the match.'
         else:
             discordMessage['messageContent']['actionPrompt'] = 'Use "**!won**" or "**!lost**" to continue.'
 
@@ -389,7 +396,9 @@ class RainbowBot(commands.Bot):
         if(operators):
             discordMessage['messageContent']['roundLineup'] += f'Backup operators: **{", ".join(operators)}**\n'
 
-        discordMessage['messageContent']['actionPrompt'] = 'Use "**!shuffle**" to get new choices.\n'
+        discordMessage['messageContent']['actionPrompt'] = ''
+        if match.reshuffles < 2:
+            discordMessage['messageContent']['actionPrompt'] += f'Use **!reshuffle** to get new choices (**{2 - match.reshuffles}** remaining).\n'
         if match.currRound != 6:
             discordMessage['messageContent']['actionPrompt'] += 'Use "**!won**" or "**!lost**" to continue.'
         elif match.scores["red"] == 3:
