@@ -203,7 +203,7 @@ class RainbowMatch:
             self.playingOnSide = overtimeSide
             self.sites = self._resetSites()
         
-        if self._isMatchFinished():
+        if self.isMatchFinished():
             return False
 
         self.currRound += 1
@@ -212,7 +212,7 @@ class RainbowMatch:
 
         return True
     
-    def _isMatchFinished(self):
+    def isMatchFinished(self):
         """Returns True if the match is finished."""
         if self.scores["blue"] == 4 and self.scores["red"] < 3:
             return True

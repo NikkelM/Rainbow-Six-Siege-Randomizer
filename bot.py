@@ -33,10 +33,10 @@ class RainbowBot(commands.Bot):
 
     async def on_ready(self):
         print(f'Logged in as {bot.user}')
-        await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name='for !startMatch'))
+        await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name='for !startMatch', case_insensitive=True))
 
     def setupBotCommands(self):
-        @self.command(name='startMatch')
+        @self.command(aliases=['startMatch', 'start', 'play'])
         async def _startMatch(ctx, *playerNames):
             serverId = str(ctx.guild.id)
             matchData = self.cursor.execute("SELECT match_data FROM matches WHERE server_id = ?", (serverId,)).fetchone()
@@ -147,7 +147,7 @@ class RainbowBot(commands.Bot):
         async def _unban(ctx, *args):
             await self._banUnban(ctx, *args, ban=False)
 
-        @self.command(name='setMap')
+        @self.command(aliases=['setMap', 'map'])
         async def _setMap(ctx, *mapName):
             match, discordMessage, canContinue = await self._getMatchData(ctx)
             if not canContinue:
@@ -180,12 +180,12 @@ class RainbowBot(commands.Bot):
             self._saveMatch(ctx, match)
             await bot._sendMessage(ctx, discordMessage)
 
-        @self.command(name='startAttack')
+        @self.command(aliases=['startAttack', 'attack'])
         async def _startAttack(ctx):
             await ctx.message.delete()
             await self._playMatch(ctx, 'attack')
 
-        @self.command(name='startDefense')
+        @self.command(aliases=['startDefense', 'defense'])
         async def _startDefense(ctx):
             await ctx.message.delete()
             await self._playMatch(ctx, 'defense')
@@ -244,7 +244,21 @@ class RainbowBot(commands.Bot):
                 self._saveDiscordMessage(ctx, discordMessage)
                 await self._endMatch(ctx)
 
-        @self.command(name='another')
+        @self.command(aliases=['reshuffle', 'shuffle'])
+        async def _reshuffle(ctx):
+            match, discordMessage, canContinue = await self._getMatchData(ctx)
+            if not canContinue:
+                return
+            await ctx.message.delete()
+
+            if match.currRound == 0:
+                discordMessage['messageContent']['actionPrompt'] = 'You can only reshuffle the lineup after the first round has started. Use **!startAttack** or **!startDefense** to start the first round.'
+                await bot._sendMessage(ctx, discordMessage)
+                return
+
+            await self._playRound(ctx)
+
+        @self.command(aliases=['another', 'again'])
         async def _another(ctx):
             match, discordMessage, canContinue = await self._getMatchData(ctx)
             if not canContinue:
@@ -265,7 +279,7 @@ class RainbowBot(commands.Bot):
             
             await _startMatch(ctx, *playerIdStrings)
 
-        @self.command(name='goodnight')
+        @self.command(aliases=['goodnight', 'bye'])
         async def _goodnight(ctx):
             match, discordMessage, canContinue = await self._getMatchData(ctx)
             if not canContinue:
@@ -286,7 +300,7 @@ class RainbowBot(commands.Bot):
             self.cursor.execute("DELETE FROM matches WHERE server_id = ?", (str(ctx.guild.id),))
             self.conn.commit()
 
-        @self.command(name='repeatMessage')
+        @self.command(aliases=['repeatMessage', 'repeat', 'sayAgain'])
         async def _repeatMessage(ctx):
             _, discordMessage, canContinue = await self._getMatchData(ctx)
             if not canContinue:
