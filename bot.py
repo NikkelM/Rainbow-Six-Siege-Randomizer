@@ -286,6 +286,15 @@ class RainbowBot(commands.Bot):
             self.cursor.execute("DELETE FROM matches WHERE server_id = ?", (str(ctx.guild.id),))
             self.conn.commit()
 
+        @self.command(name='repeatMessage')
+        async def _repeatMessage(ctx):
+            _, discordMessage, canContinue = await self._getMatchData(ctx)
+            if not canContinue:
+                return
+
+            discordMessage['matchMessageId'] = None
+            await bot._sendMessage(ctx, discordMessage)
+
     async def _banUnban(self, ctx, *args, ban=True):
         match, discordMessage, canContinue = await self._getMatchData(ctx)
         if not canContinue:
