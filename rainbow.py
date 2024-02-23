@@ -12,7 +12,7 @@ class RainbowMatch:
             self.currSite = existingMatch['currSite']
             self.currRound = existingMatch['currRound']
             self.scores = existingMatch['scores']
-            self.overtime = existingMatch['overtime']
+            self.reshuffles = existingMatch['reshuffles']
             self.players = existingMatch['players']
             self.playersString = existingMatch['playersString']
         else:
@@ -23,7 +23,7 @@ class RainbowMatch:
             self.currSite = None
             self.currRound = 0
             self.scores = {"blue": 0, "red": 0}
-            self.overtime = False
+            self.reshuffles = 0
             self.players = []
             self.playersString = ''
 
@@ -48,6 +48,9 @@ class RainbowMatch:
         }
     
     def _getMap(self, map):
+        if map is None:
+            return [None, ['FIRST', 'SECOND', 'THIRD', 'FOURTH']]
+
         maps = {
             'Lair': ['2F Master Office/2F R6 Room', '1F Bunks/1F Briefing', '1F Armory/1F Weapon Maintenance', 'B Lab/B Lab Support'],
             'Clubhouse': ['2F Bedroom/2F Gym', '2F Cash Room/2F CCTV Room', '1F Bar/1F Stage', 'B Church/B Arsenal Room'],
@@ -74,14 +77,15 @@ class RainbowMatch:
             'Stadium Bravo': ['2F Armory Lockers/2F Archives', '2F Penthouse/2F VIP Lounge', '1F Showers/1F Server', '1F Service/1F Kitchen'],
             'Nighthaven Labs': ['2F Command Center/2F Servers', '1F Kitchen/1F Cafeteria', '1F Control Room/1F Storage', 'B Tank/B Assembly'],
         }
+
         best_match, score = process.extractOne(map, maps.keys())
         if score > 70:
             return [best_match, maps[best_match]]
-        return None
+        return [None, ['FIRST', 'SECOND', 'THIRD', 'FOURTH']]
 
     def _resetSites(self):
         """Resets the sites for the current map."""
-        return self._getMap(self.map)[1] if self.map else ['FIRST', 'SECOND', 'THIRD', 'FOURTH']
+        return list(range(len(self._getMap(self.map)[1])))
 
     def setPlayers(self, playerNames):
         """Sets the players in the current match."""
@@ -166,7 +170,7 @@ class RainbowMatch:
         return sanitized_names
 
     def setMap(self, map):
-        """Sets the map for the current match."""
+        """Sets the map for the current match. 0 means a map has already been set and the match is ongoing, 1 means the map is invalid, and 2 means the map has been set successfully."""
         if self.map and self.currRound > 0:
             return 0
 
@@ -175,20 +179,12 @@ class RainbowMatch:
             return 1
 
         self.map = mapMapping[0]
-        new_sites = mapMapping[1]
-
-        if self.currRound > 0:
-            site_mapping = {"FIRST": 0, "SECOND": 1, "THIRD": 2, "FOURTH": 3}
-            self.currSite = new_sites[site_mapping.get(self.currSite, 0)]
-            self.sites = [new_sites[site_mapping[site]] for site in self.sites if site in site_mapping]
-        else:
-            self.sites = new_sites
         return 2
 
     def getPlayedSite(self):
         """Returns a choice of site that should be played, and removes the choice from the pool."""
         self.currSite = random.choice(self.sites)
-        return self.currSite
+        return self._getMap(self.map)[1][self.currSite]
 
     def getPlayedOperators(self, side):
         """Returns a random list of operators for the specified side, excluding any banned operators."""
@@ -206,7 +202,6 @@ class RainbowMatch:
             self.scores["red"] += 1
 
         if self.scores["blue"] == 3 and self.scores["red"] == 3:
-            self.overtime = True
             self.playingOnSide = overtimeSide
             self.sites = self._resetSites()
         
@@ -221,6 +216,10 @@ class RainbowMatch:
     
     def isMatchFinished(self):
         """Returns True if the match is finished."""
-        if self.overtime:
-            return self.scores["blue"] == 5 or self.scores["red"] == 5
-        return self.scores["blue"] == 4 or self.scores["red"] == 4
+        if self.scores["blue"] == 4 and self.scores["red"] < 3:
+            return True
+        if self.scores["red"] == 4 and self.scores["blue"] < 3:
+            return True
+        if self.scores["blue"] == 5 or self.scores["red"] == 5:
+            return True
+        return False
