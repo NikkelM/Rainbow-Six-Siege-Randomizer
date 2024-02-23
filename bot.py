@@ -154,6 +154,11 @@ class RainbowBot(commands.Bot):
                 return
             await ctx.message.delete()
 
+            if len(mapName) == 0:
+                discordMessage['messageContent']['actionPrompt'] = 'You must specify a map. Use "**!setMap map**" to try again.'
+                await bot._sendMessage(ctx, discordMessage)
+                return
+
             discordMessage['messageContent']['actionPrompt'] = ''
             mapName = ' '.join(mapName)
             couldSetMap = match.setMap(mapName)
@@ -248,7 +253,7 @@ class RainbowBot(commands.Bot):
             if not match.isMatchFinished():
                 discordMessage['messageContent']['playersBanner'] = f"Stopped a match with {match.playersString}{' on **' + match.map + '**' if match.map else ''} before completing it.\n"
                 discordMessage['messageContent']['matchMetadata'] = ''
-                discordMessage['messageContent']['matchScore'] = f'The score was **{match.scores["blue"]}**:**{match.scores["red"]}**, we were playing on **{match.playingOnSide}**.\n'
+                discordMessage['messageContent']['matchScore'] = f"The score was **{match.scores['blue']}**:**{match.scores['red']}**{', we were playing on **' + match.playingOnSide + '**' if match.playingOnSide else ''}.\n"
                 discordMessage['messageContent']['roundMetadata'] = ''
                 discordMessage['messageContent']['roundLineup'] = ''
             discordMessage['messageContent']['actionPrompt'] = ''
@@ -269,7 +274,7 @@ class RainbowBot(commands.Bot):
 
             if not match.isMatchFinished():
                 discordMessage['messageContent']['playersBanner'] = f"Stopped a match with {match.playersString}{' on **' + match.map + '**' if match.map else ''} before completing it.\n"
-                discordMessage['messageContent']['matchScore'] = f'The score was **{match.scores["blue"]}**:**{match.scores["red"]}**, we were playing on **{match.playingOnSide}**.\n'
+                discordMessage['messageContent']['matchScore'] = f"The score was **{match.scores['blue']}**:**{match.scores['red']}**{', we were playing on **' + match.playingOnSide + '**' if match.playingOnSide else ''}.\n"
             else:
                 discordMessage['messageContent']['playersBanner'] = f"Finished a match with {match.playersString}{' on **' + match.map + '**' if match.map else ''}.\n"
             discordMessage['messageContent']['roundMetadata'] = ''
