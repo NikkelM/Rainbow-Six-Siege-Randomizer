@@ -241,10 +241,19 @@ class RainbowBot(commands.Bot):
 
         @self.command(name='another')
         async def _another(ctx):
-            match, _, canContinue = await self._getMatchData(ctx)
+            match, discordMessage, canContinue = await self._getMatchData(ctx)
             if not canContinue:
                 return
-
+            
+            if not match.isMatchFinished():
+                discordMessage['messageContent']['playersBanner'] = f"Stopped a match with {match.playersString}{' on **' + match.map + '**' if match.map else ''} before completing it.\n"
+                discordMessage['messageContent']['matchMetadata'] = ''
+                discordMessage['messageContent']['matchScore'] = f'The score was **{match.scores["blue"]}**:**{match.scores["red"]}**, we were playing on **{match.playingOnSide}**.\n'
+                discordMessage['messageContent']['roundMetadata'] = ''
+                discordMessage['messageContent']['roundLineup'] = ''
+            discordMessage['messageContent']['actionPrompt'] = ''
+            await bot._sendMessage(ctx, discordMessage, True)
+            
             playerIdStrings = [f'<@{player["id"]}>' for player in match.players]
             self.cursor.execute("DELETE FROM matches WHERE server_id = ?", (str(ctx.guild.id),))
             self.conn.commit()
@@ -258,14 +267,14 @@ class RainbowBot(commands.Bot):
                 return
             await ctx.message.delete()
 
-            discordMessage['messageContent']['playersBanner'] = f"Finished a match with {match.playersString}{' on **' + match.map + '**' if match.map else ''}.\n"
+            if not match.isMatchFinished():
+                discordMessage['messageContent']['playersBanner'] = f"Stopped a match with {match.playersString}{' on **' + match.map + '**' if match.map else ''} before completing it.\n"
+                discordMessage['messageContent']['matchScore'] = f'The score was **{match.scores["blue"]}**:**{match.scores["red"]}**, we were playing on **{match.playingOnSide}**.\n'
+            else:
+                discordMessage['messageContent']['playersBanner'] = f"Finished a match with {match.playersString}{' on **' + match.map + '**' if match.map else ''}.\n"
             discordMessage['messageContent']['roundMetadata'] = ''
             discordMessage['messageContent']['roundLineup'] = ''
             discordMessage['messageContent']['matchMetadata'] = 'Ending the session here... '
-            if match.scores["blue"] > match.scores["red"]:
-                discordMessage['messageContent']['matchMetadata'] += 'better to end on a high note!'
-            else:
-                discordMessage['messageContent']['matchMetadata'] += 'it\'s not going anywhere, let\'s call it a night.'
             discordMessage['messageContent']['actionPrompt'] = 'Use **!startMatch** to start a new match.'
             await bot._sendMessage(ctx, discordMessage)
 
