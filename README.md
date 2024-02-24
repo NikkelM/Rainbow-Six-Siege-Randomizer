@@ -145,7 +145,6 @@ rm ./rainbowDiscordBot.db
 
 Now, pull and run the image you previously built:
 
-<!-- docker pull gcr.io/rainbow-six-siege-discord-bot/rainbow-six-siege-discord-bot -->
 ```bash
 docker pull gcr.io/<projectId>/rainbow-six-siege-discord-bot
 docker run -d -p 80:80 -v rainbow-six-siege-discord-bot-database:/app/data gcr.io/<projectId>/rainbow-six-siege-discord-bot

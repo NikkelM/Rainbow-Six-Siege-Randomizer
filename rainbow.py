@@ -53,7 +53,7 @@ class RainbowMatch:
 
         maps = {
             'Lair': ['2F Master Office/2F R6 Room', '1F Bunks/1F Briefing', '1F Armory/1F Weapon Maintenance', 'B Lab/B Lab Support'],
-            'Clubhouse': ['2F Bedroom/2F Gym', '2F Cash Room/2F CCTV Room', '1F Bar/1F Stage', 'B Church/B Arsenal Room'],
+            'Club House': ['2F Bedroom/2F Gym', '2F Cash Room/2F CCTV Room', '1F Bar/1F Stage', 'B Church/B Arsenal Room'],
             'Consulate': ['2F Consul Office/2F Meeting Room', '1F Exposition Room/1F Piano Room', 'B Servers/1F Tellers', 'B Cafeteria/B Garage'],
             'Oregon': ['2F Kids\' Dorms/2F Dorms Main Hall', '1F Kitchen/1F Dining Hall', '1F Meeting Hall/1F Kitchen', 'B Laundry Room/B Supply Room'],
             'Kafe Dostoyevsky': ['3F Cocktail Lounge/3F Bar', '2F Fireplace Hall/2F Mining Room', '2F Fireplace Hall/2F Reading Room', '1F Kitchen Cooking/1F Kitchen Service'],
