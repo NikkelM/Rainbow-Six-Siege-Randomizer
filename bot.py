@@ -3,6 +3,7 @@ import json
 import os
 import re
 import sqlite3
+from version import __version__ as VERSION
 from discord.ext import commands
 from dotenv import load_dotenv
 from rainbow import RainbowMatch
@@ -71,19 +72,19 @@ class RainbowBot(commands.Bot):
                 await bot._sendMessage(ctx, discordMessage, True)
                 return
 
-            discordMessage['messageContent']['matchMetadata'] = f'Ban the **{match.getMapBan()}** map in rotation, and these operators:\n'
+            discordMessage['messageContent']['banMetadata'] = f'Ban the **{match.getMapBan()}** map in rotation, and these operators:\n'
             attBans, defBans = match.getOperatorBanChoices()
             att1, att2 = attBans
             def1, def2 = defBans
-            discordMessage['messageContent']['matchMetadata'] += f'Attack:    **{att1}** or if banned **{att2}**\n'
-            discordMessage['messageContent']['matchMetadata'] += f'Defense: **{def1}** or if banned **{def2}**\n'
+            discordMessage['messageContent']['banMetadata'] += f'Attack:    **{att1}** or if banned **{att2}**\n'
+            discordMessage['messageContent']['banMetadata'] += f'Defense: **{def1}** or if banned **{def2}**\n'
 
             discordMessage['messageContent']['actionPrompt'] = 'Next, use "**!setMap map**" and "**!ban op1 op2...**"'
 
             self._saveMatch(ctx, match)
             await bot._sendMessage(ctx, discordMessage)
 
-        @self.command(name='addPlayers')
+        @self.command(aliases=['addPlayers', 'addPlayer'])
         async def _addPlayers(ctx, *playerNames):
             match, discordMessage, canContinue = await self._getMatchData(ctx)
             if not canContinue:
@@ -111,7 +112,7 @@ class RainbowBot(commands.Bot):
             self._saveMatch(ctx, match)
             await bot._sendMessage(ctx, discordMessage)
 
-        @self.command(name='removePlayers')
+        @self.command(aliases=['removePlayers', 'removePlayer'])
         async def _removePlayers(ctx, *playerNames):
             match, discordMessage, canContinue = await self._getMatchData(ctx)
             if not canContinue:
@@ -185,7 +186,7 @@ class RainbowBot(commands.Bot):
             await ctx.message.delete()
             await self._playMatch(ctx, 'attack')
 
-        @self.command(aliases=['defense', 'startDefense'])
+        @self.command(aliases=['defense', 'startDefense', 'defend'])
         async def _startDefense(ctx):
             await ctx.message.delete()
             await self._playMatch(ctx, 'defense')
@@ -273,7 +274,7 @@ class RainbowBot(commands.Bot):
             
             if not match.isMatchFinished():
                 discordMessage['messageContent']['playersBanner'] = f"Stopped a match with {match.playersString}{' on **' + match.map + '**' if match.map else ''} before completing it.\n"
-                discordMessage['messageContent']['matchMetadata'] = ''
+                discordMessage['messageContent']['banMetadata'] = ''
                 discordMessage['messageContent']['matchScore'] = f"The score was **{match.scores['blue']}**:**{match.scores['red']}**{', we were playing on **' + match.playingOnSide + '**' if match.playingOnSide else ''}.\n"
                 discordMessage['messageContent']['roundMetadata'] = ''
                 discordMessage['messageContent']['roundLineup'] = ''
@@ -300,8 +301,8 @@ class RainbowBot(commands.Bot):
                 discordMessage['messageContent']['playersBanner'] = f"Finished a match with {match.playersString}{' on **' + match.map + '**' if match.map else ''}.\n"
             discordMessage['messageContent']['roundMetadata'] = ''
             discordMessage['messageContent']['roundLineup'] = ''
-            discordMessage['messageContent']['matchMetadata'] = 'Ending the session here... '
-            discordMessage['messageContent']['actionPrompt'] = 'Use **!startMatch** to start a new match.'
+            discordMessage['messageContent']['banMetadata'] = ''
+            discordMessage['messageContent']['actionPrompt'] = 'Ending the session here...\nUse **!startMatch** to start a new match.'
             await bot._sendMessage(ctx, discordMessage)
 
             self.cursor.execute("DELETE FROM matches WHERE server_id = ?", (str(ctx.guild.id),))
@@ -316,6 +317,10 @@ class RainbowBot(commands.Bot):
             discordMessage['matchMessageId'] = None
             await bot._sendMessage(ctx, discordMessage)
 
+        @self.command(name='version')
+        async def _version(ctx):
+            await ctx.send(f'RandomSixBot is running on v{VERSION}.')
+
     async def _banUnban(self, ctx, *args, ban=True):
         match, discordMessage, canContinue = await self._getMatchData(ctx)
         if not canContinue:
@@ -326,15 +331,15 @@ class RainbowBot(commands.Bot):
         sanitizedBans = match.banOperators(bans, ban)
 
         if match.bannedOperators == []:
-            discordMessage['messageContent']['matchMetadata'] = 'No operators are banned in this match.\n'
+            discordMessage['messageContent']['banMetadata'] = 'No operators are banned in this match.\n'
         else:
-            discordMessage['messageContent']['matchMetadata'] = f'The following operators are banned in this match:\n{", ".join([f"**{op}**" for op in match.bannedOperators])}\n'
+            discordMessage['messageContent']['banMetadata'] = f'The following operators are banned in this match:\n{", ".join([f"**{op}**" for op in match.bannedOperators])}\n'
             unrecognizedBans = [ban for ban in zip(sanitizedBans, args) if ban[0] is None]
             if len(unrecognizedBans) > 0:
                 if ban:
-                    discordMessage['messageContent']['matchMetadata'] += f'The following operators were not recognized:\n{", ".join([f"**{ban[1]}**" for ban in unrecognizedBans])}\n'
+                    discordMessage['messageContent']['banMetadata'] += f'The following operators were not recognized:\n{", ".join([f"**{ban[1]}**" for ban in unrecognizedBans])}\n'
                 else:
-                    discordMessage['messageContent']['matchMetadata'] += f'The following operators were not recognized, or not banned:\n{", ".join([f"**{ban[1]}**" for ban in unrecognizedBans])}\n'
+                    discordMessage['messageContent']['banMetadata'] += f'The following operators were not recognized, or not banned:\n{", ".join([f"**{ban[1]}**" for ban in unrecognizedBans])}\n'
 
         if match.currRound == 0:
             discordMessage['messageContent']['actionPrompt'] = ''
@@ -359,7 +364,6 @@ class RainbowBot(commands.Bot):
             return
         
         discordMessage['messageContent']['playersBanner'] = f"Playing a match with {match.playersString}{' on **' + match.map + '**' if match.map else ''}.\n"
-        discordMessage['messageContent']['matchMetadata'] = ''
         
         if side == 'attack':
             match.playingOnSide = 'attack'
@@ -380,6 +384,7 @@ class RainbowBot(commands.Bot):
 
         discordMessage['messageContent']['playersBanner'] = f"Playing a match with {match.playersString}{' on **' + match.map + '**' if match.map else ''}.\n"
         discordMessage['messageContent']['matchScore'] = f'The score is **{match.scores["blue"]}**:**{match.scores["red"]}**, we are playing on **{match.playingOnSide}**.\n'
+        discordMessage['messageContent']['banMetadata'] = ''
         discordMessage['messageContent']['roundMetadata'] = f'Here is your lineup for round {match.currRound}:'
 
         operators = match.getPlayedOperators(match.playingOnSide)
@@ -446,7 +451,7 @@ class RainbowBot(commands.Bot):
             'messageContent': {
                 'playersBanner': '',
                 'matchScore': '',
-                'matchMetadata': '',
+                'banMetadata': '',
                 'roundMetadata': '',
                 'roundLineup': '',
                 'actionPrompt': ''
