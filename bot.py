@@ -3,6 +3,7 @@ import json
 import os
 import re
 import sqlite3
+from version import __version__ as VERSION
 from discord.ext import commands
 from dotenv import load_dotenv
 from rainbow import RainbowMatch
@@ -315,6 +316,10 @@ class RainbowBot(commands.Bot):
 
             discordMessage['matchMessageId'] = None
             await bot._sendMessage(ctx, discordMessage)
+
+        @self.command(name='version')
+        async def _version(ctx):
+            await ctx.send(f'RandomSixBot is running on v{VERSION}.')
 
     async def _banUnban(self, ctx, *args, ban=True):
         match, discordMessage, canContinue = await self._getMatchData(ctx)
