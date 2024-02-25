@@ -102,7 +102,7 @@ class RainbowMatch:
             }
         
         playerNames = [dict(t) for t in {tuple(d.items()) for d in playerNames}]
-        self.players = sorted(playerNames, key=lambda player: player['nick'] if player['nick'] else (player['global_name'] if player['global_name'] else player['name']))
+        self.players = sorted(playerNames, key=lambda player: (player['nick'].lower() if player['nick'] else (player['global_name'].lower() if player['global_name'] else player['name'].lower())))
         self._constructPlayersString()
 
     def removePlayers(self, playerNames):
