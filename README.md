@@ -1,4 +1,4 @@
-# Rainbow Six: Siege Randomizer
+# Random Six Bot
 
 A discord bot that randomizes bans, operator selections and more for Rainbow Six: Siege.
 
@@ -99,7 +99,9 @@ Management: Under `Automation`, set the following as the startup script for the 
 ```bash
 docker stop $(docker ps -a -q)
 docker rm $(docker ps -a -q)
+gcloud auth configure-docker
 docker pull gcr.io/<projectId>/rainbow-six-siege-discord-bot
+docker image prune -f
 docker run -d -p 80:80 -v rainbow-six-siege-discord-bot-database:/app/data gcr.io/<projectId>/rainbow-six-siege-discord-bot
 ```
 
