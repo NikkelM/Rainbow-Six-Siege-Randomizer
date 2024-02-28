@@ -170,16 +170,13 @@ class RainbowMatch:
         return sanitized_names
 
     def setMap(self, map):
-        """Sets the map for the current match. 0 means a map has already been set and the match is ongoing, 1 means the map is invalid, and 2 means the map has been set successfully."""
-        if self.map and self.currRound > 0:
-            return 0
-
+        """Sets the map for the current match. Returns True if the map has been set successfully."""
         mapMapping = self._getMap(map)
         if not mapMapping:
-            return 1
+            return False
 
         self.map = mapMapping[0]
-        return 2
+        return True
 
     def getPlayedSite(self):
         """Returns a choice of site that should be played, and removes the choice from the pool."""

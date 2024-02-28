@@ -40,7 +40,7 @@ class RainbowBot(commands.Bot):
     def setupBotCommands(self):
         @self.command(aliases=['startMatch', 'start', 'play'], category='Rainbow Six')
         async def _startMatch(ctx, *playerNames):
-            """Start a new match with up to five players. Use **!startMatch @player1 @player2...** to start a new match with the mentioned players."""
+            """Starts a new match with up to five players. Use **!startMatch @player1 @player2...** to start a match with the mentioned players."""
             serverId = str(ctx.guild.id)
             matchData = self.cursor.execute("SELECT match_data FROM matches WHERE server_id = ?", (serverId,)).fetchone()
 
@@ -88,6 +88,7 @@ class RainbowBot(commands.Bot):
 
         @self.command(aliases=['addPlayers', 'addPlayer'])
         async def _addPlayers(ctx, *playerNames):
+            """Adds additional players to the match. Use **!addPlayers @player1 @player2...** to add the mentioned players to the match. The total number of players cannot exceed five, use **!removePlayers** first if you need to."""
             match, discordMessage, canContinue = await self._getMatchData(ctx)
             if not canContinue:
                 return
@@ -116,6 +117,7 @@ class RainbowBot(commands.Bot):
 
         @self.command(aliases=['removePlayers', 'removePlayer'])
         async def _removePlayers(ctx, *playerNames):
+            """Removes players from the match. Use **!removePlayers @player1 @player2...** to remove the mentioned players from the match. At least one player must remain in the match."""
             match, discordMessage, canContinue = await self._getMatchData(ctx)
             if not canContinue:
                 return
@@ -144,14 +146,17 @@ class RainbowBot(commands.Bot):
 
         @self.command(name='ban')
         async def _ban(ctx, *operators):
+            """Bans operators from the match. Use **!ban op1 op2...** to ban the mentioned operators from the match. You can ban as many operators as you like."""
             await self._banUnban(ctx, *operators, ban=True)
 
         @self.command(name='unban')
         async def _unban(ctx, *operators):
+            """Unbans operators from the match. Use **!unban op1 op2...** to unban the mentioned operators from the match."""
             await self._banUnban(ctx, *operators, ban=False)
 
         @self.command(aliases=['setMap', 'map'])
         async def _setMap(ctx, *mapName):
+            """Sets the map for the match. This will influence the sites displayed for defensive rounds. Use **!setMap map** to set the map. A map can be set at any point in the match."""
             match, discordMessage, canContinue = await self._getMatchData(ctx)
             if not canContinue:
                 return
@@ -165,12 +170,10 @@ class RainbowBot(commands.Bot):
             discordMessage['messageContent']['actionPrompt'] = ''
             mapName = ' '.join(mapName)
             couldSetMap = match.setMap(mapName)
-            if couldSetMap == 2:
+            if couldSetMap:
                 discordMessage['messageContent']['playersBanner'] = f"Playing a match with {match.playersString}{' on **' + match.map + '**' if match.map else ''}.\n"
-            elif couldSetMap == 1:
-                discordMessage['messageContent']['actionPrompt'] += f'**{mapName}** is not a valid map. Use "**!setMap map**" to try again.\n'
             else:
-                discordMessage['messageContent']['actionPrompt'] += f'A map has already been set, you cannot change it anymore. Use "**!another**" to restart the match.\n'
+                discordMessage['messageContent']['actionPrompt'] += f'**{mapName}** is not a valid map. Use "**!setMap map**" to try again.\n'
 
             if match.currRound == 0:
                 if not match.bannedOperators:
@@ -185,16 +188,19 @@ class RainbowBot(commands.Bot):
 
         @self.command(aliases=['attack', 'startAttack'])
         async def _startAttack(ctx):
+            """Starts the match on attack."""
             await ctx.message.delete()
             await self._playMatch(ctx, 'attack')
 
         @self.command(aliases=['defense', 'startDefense', 'defend'])
         async def _startDefense(ctx):
+            """Starts the match on defense."""
             await ctx.message.delete()
             await self._playMatch(ctx, 'defense')
 
         @self.command(name='won')
         async def _won(ctx, overtimeSide=None):
+            """Marks the current round as won and starts a new round. If winning starts overtime, you must specify the side you start overtime on with **!won attack** or **!won defense**."""
             match, discordMessage, canContinue = await self._getMatchData(ctx)
             if not canContinue:
                 return
@@ -222,6 +228,7 @@ class RainbowBot(commands.Bot):
 
         @self.command(name='lost')
         async def _lost(ctx, overtimeSide=None):
+            """Marks the current round as lost and starts a new round. If losing starts overtime, you must specify the side you start overtime on with **!lost attack** or **!lost defense**."""
             match, discordMessage, canContinue = await self._getMatchData(ctx)
             if not canContinue:
                 return
@@ -249,6 +256,7 @@ class RainbowBot(commands.Bot):
 
         @self.command(aliases=['reshuffle', 'shuffle'])
         async def _reshuffle(ctx):
+            """Reshuffles the operator choices and site (if playing on defense) for the current round. You can reshuffle up to twice per match."""
             match, discordMessage, canContinue = await self._getMatchData(ctx)
             if not canContinue:
                 return
@@ -270,6 +278,7 @@ class RainbowBot(commands.Bot):
 
         @self.command(aliases=['another', 'again'])
         async def _another(ctx):
+            """Starts a new match with the same players as the previous one."""
             match, discordMessage, canContinue = await self._getMatchData(ctx)
             if not canContinue:
                 return
@@ -291,6 +300,7 @@ class RainbowBot(commands.Bot):
 
         @self.command(aliases=['goodnight', 'bye'])
         async def _goodnight(ctx):
+            """Ends the current match and/or session."""
             match, discordMessage, canContinue = await self._getMatchData(ctx)
             if not canContinue:
                 return
@@ -312,6 +322,7 @@ class RainbowBot(commands.Bot):
 
         @self.command(aliases=['repeatMessage', 'repeat', 'sayAgain'])
         async def _repeatMessage(ctx):
+            """Sends the last message sent by the bot again as a new message."""
             _, discordMessage, canContinue = await self._getMatchData(ctx)
             if not canContinue:
                 return
@@ -321,6 +332,7 @@ class RainbowBot(commands.Bot):
 
         @self.command(name='version')
         async def _version(ctx):
+            """Displays the version of the bot."""
             await ctx.send(f'RandomSixBot is running on v{VERSION}.')
 
     async def _banUnban(self, ctx, *operators, ban=True):

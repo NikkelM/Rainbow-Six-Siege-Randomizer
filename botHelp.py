@@ -14,14 +14,14 @@ class CustomHelpCommand(commands.HelpCommand):
         await channel.send(embed=embed)
 
     async def send_bot_help(self, mapping):
-        embed = discord.Embed(title="Help - RandomSixBot", color=discord.Color.blurple())
+        embed = discord.Embed(title="Help", color=discord.Color.blurple())
 
         for cog, commands in mapping.items():
             filtered = await self.filter_commands(commands, sort=True)
             command_signatures = [re.sub(r'!_', '!', self.get_command_signature(c)) for c in filtered]
 
             if command_signatures:
-                cog_name = getattr(cog, "qualified_name", "No Category")
+                cog_name = getattr(cog, "qualified_name", "RandomSixBot")
                 embed.add_field(name=cog_name, value="\n".join(command_signatures), inline=False)
 
         channel = self.get_destination()
@@ -37,7 +37,7 @@ class CustomHelpCommand(commands.HelpCommand):
         await self.get_destination().send(embed=embed)
 
     async def send_command_help(self, command):
-        embed = discord.Embed(title=re.sub(r'!_', '!', self.get_command_signature(command)), color=discord.Color.random())
+        embed = discord.Embed(title=re.sub(r'!_', '!', self.get_command_signature(command)), color=discord.Color.magenta())
         if command.help:
             embed.description = command.help
         if alias := command.aliases:
