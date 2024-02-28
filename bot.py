@@ -5,7 +5,6 @@ import re
 import sqlite3
 from discord.ext import commands
 from dotenv import load_dotenv
-from botHelp import CustomHelpCommand
 from rainbow import RainbowMatch
 
 load_dotenv()
@@ -34,8 +33,12 @@ class RainbowBot(commands.Bot):
 
     async def on_ready(self):
         print(f'Logged in as {bot.user}')
-        await bot.load_extension('cogs.general')
-        await bot.load_extension('cogs.matchSetup')
+        cogs_list = [
+            'general',
+            'matchSetup'
+        ]
+        for cog in cogs_list:
+            await bot.load_extension(f'cogs.{cog}')
         await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name='for !startMatch'))
 
     def setupBotCommands(self):
@@ -359,5 +362,4 @@ class RainbowBot(commands.Bot):
 
 if __name__ == "__main__":
     bot = RainbowBot()
-    bot.help_command = CustomHelpCommand()
     bot.run(TOKEN)

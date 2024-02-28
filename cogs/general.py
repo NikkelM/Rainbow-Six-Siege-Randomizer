@@ -1,11 +1,14 @@
 from discord.ext import commands
 from bot import RainbowBot
 from version import __version__ as VERSION
+from botHelp import CustomHelpCommand
 
 class General(commands.Cog, name='General'):
     """This category contains commands that are related to managing the bot itself."""
     def __init__(self, bot):
         self.bot: RainbowBot = bot
+        bot.help_command = CustomHelpCommand()
+        bot.help_command.cog = self
 
     @commands.command(aliases=['repeatMessage', 'repeat', 'sayAgain'])
     async def _repeatMessage(self, ctx):
