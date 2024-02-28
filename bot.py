@@ -35,7 +35,9 @@ class RainbowBot(commands.Bot):
         print(f'Logged in as {bot.user}')
         cogs_list = [
             'general',
-            'matchSetup'
+            'matchManagement',
+            # TODO
+            # 'ongoingMatch',
         ]
         for cog in cogs_list:
             await bot.load_extension(f'cogs.{cog}')

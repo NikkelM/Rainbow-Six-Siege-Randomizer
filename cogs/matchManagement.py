@@ -3,7 +3,7 @@ import json
 from rainbow import RainbowMatch
 from bot import RainbowBot
 
-class MatchSetup(commands.Cog, name='Match Setup'):
+class MatchManagement(commands.Cog, name='Match Management'):
     """This category contains commands relevant to setting up matches."""
     def __init__(self, bot):
         self.bot: RainbowBot = bot
@@ -159,4 +159,4 @@ class MatchSetup(commands.Cog, name='Match Setup'):
         self.bot.conn.commit()
 
 async def setup(bot: RainbowBot):
-    await bot.add_cog(MatchSetup(bot))
+    await bot.add_cog(MatchManagement(bot))
