@@ -6,6 +6,7 @@ import sqlite3
 from version import __version__ as VERSION
 from discord.ext import commands
 from dotenv import load_dotenv
+from botHelp import CustomHelpCommand
 from rainbow import RainbowMatch
 
 load_dotenv()
@@ -34,11 +35,12 @@ class RainbowBot(commands.Bot):
 
     async def on_ready(self):
         print(f'Logged in as {bot.user}')
-        await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name='for !startMatch', case_insensitive=True))
+        await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name='for !startMatch', case_insensitive=True, help_command=commands.HelpCommand()))
 
     def setupBotCommands(self):
-        @self.command(aliases=['startMatch', 'start', 'play'])
+        @self.command(aliases=['startMatch', 'start', 'play'], category='Rainbow Six')
         async def _startMatch(ctx, *playerNames):
+            """Start a new match with up to five players. Use **!startMatch @player1 @player2...** to start a new match with the mentioned players."""
             serverId = str(ctx.guild.id)
             matchData = self.cursor.execute("SELECT match_data FROM matches WHERE server_id = ?", (serverId,)).fetchone()
 
@@ -141,12 +143,12 @@ class RainbowBot(commands.Bot):
             await bot._sendMessage(ctx, discordMessage)
 
         @self.command(name='ban')
-        async def _ban(ctx, *args):
-            await self._banUnban(ctx, *args, ban=True)
+        async def _ban(ctx, *operators):
+            await self._banUnban(ctx, *operators, ban=True)
 
         @self.command(name='unban')
-        async def _unban(ctx, *args):
-            await self._banUnban(ctx, *args, ban=False)
+        async def _unban(ctx, *operators):
+            await self._banUnban(ctx, *operators, ban=False)
 
         @self.command(aliases=['setMap', 'map'])
         async def _setMap(ctx, *mapName):
@@ -321,20 +323,20 @@ class RainbowBot(commands.Bot):
         async def _version(ctx):
             await ctx.send(f'RandomSixBot is running on v{VERSION}.')
 
-    async def _banUnban(self, ctx, *args, ban=True):
+    async def _banUnban(self, ctx, *operators, ban=True):
         match, discordMessage, canContinue = await self._getMatchData(ctx)
         if not canContinue:
             return
         await ctx.message.delete()
 
-        bans = ' '.join(args)
+        bans = ' '.join(operators)
         sanitizedBans = match.banOperators(bans, ban)
 
         if match.bannedOperators == []:
             discordMessage['messageContent']['banMetadata'] = 'No operators are banned in this match.\n'
         else:
             discordMessage['messageContent']['banMetadata'] = f'The following operators are banned in this match:\n{", ".join([f"**{op}**" for op in match.bannedOperators])}\n'
-            unrecognizedBans = [ban for ban in zip(sanitizedBans, args) if ban[0] is None]
+            unrecognizedBans = [ban for ban in zip(sanitizedBans, operators) if ban[0] is None]
             if len(unrecognizedBans) > 0:
                 if ban:
                     discordMessage['messageContent']['banMetadata'] += f'The following operators were not recognized:\n{", ".join([f"**{ban[1]}**" for ban in unrecognizedBans])}\n'
@@ -509,4 +511,5 @@ class RainbowBot(commands.Bot):
 
 if __name__ == "__main__":
     bot = RainbowBot()
+    bot.help_command = CustomHelpCommand()
     bot.run(TOKEN)
