@@ -52,7 +52,7 @@ class MatchManagement(commands.Cog, name='Match Management'):
         discordMessage['messageContent']['banMetadata'] += f'Attack:    **{att1}** or if banned **{att2}**\n'
         discordMessage['messageContent']['banMetadata'] += f'Defense: **{def1}** or if banned **{def2}**\n'
 
-        discordMessage['messageContent']['actionPrompt'] = 'Next, use "**!setMap map**" and "**!ban op1 op2...**", or start the match with **!attack** or **!defense**.'
+        discordMessage['messageContent']['actionPrompt'] = 'Next, use "**!setMap map**" and "**!ban op1 op2...**", or start the match with **!attack** ⚔️ or **!defense** 🛡️.'
         discordMessage['reactions'] = ['⚔️', '🛡️']
 
         self.bot.saveMatch(ctx, match)
@@ -155,6 +155,7 @@ class MatchManagement(commands.Cog, name='Match Management'):
         discordMessage['messageContent']['roundLineup'] = ''
         discordMessage['messageContent']['banMetadata'] = ''
         discordMessage['messageContent']['actionPrompt'] = 'Ending the session here...\nUse **!startMatch** to start a new match.'
+        discordMessage['reactions'] = []
         await self.bot.sendMessage(ctx, discordMessage)
 
         self.bot.cursor.execute("DELETE FROM matches WHERE server_id = ?", (str(ctx.guild.id),))

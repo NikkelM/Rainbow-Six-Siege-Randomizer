@@ -78,6 +78,10 @@ class RainbowBot(commands.Bot):
     async def _manageReactions(self, message: discord.Message, discordMessage):
         currentReactions = [r.emoji for r in message.reactions]
 
+        for reaction in currentReactions:
+            if reaction not in discordMessage['reactions']:
+                await message.clear_reaction(reaction)
+
         for reaction in discordMessage['reactions']:
             if reaction in currentReactions:
                 reaction = next((r for r in message.reactions if r.emoji == reaction), None)
@@ -87,10 +91,6 @@ class RainbowBot(commands.Bot):
                         await message.remove_reaction(reaction, user)
             else:
                 await message.add_reaction(reaction)
-
-        for reaction in currentReactions:
-            if reaction not in discordMessage['reactions']:
-                await message.clear_reaction(reaction)
     
     def saveMatch(self, ctx: commands.Context, match):
         serverId = str(ctx.guild.id)
