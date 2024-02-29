@@ -24,7 +24,7 @@ class MatchManagement(commands.Cog, name='Match Management'):
             return
 
         match = RainbowMatch()
-        discordMessage = self.bot.resetDiscordMessage(ctx)
+        discordMessage = self.bot.resetDiscordMessage(ctx.guild.id)
         self.bot.cursor.execute("INSERT INTO matches (server_id, discord_message) VALUES (?, ?)", (serverId, json.dumps(discordMessage)))
 
         if len(playerNames) > 5:
@@ -125,11 +125,12 @@ class MatchManagement(commands.Cog, name='Match Management'):
             
         if not match.isMatchFinished():
             discordMessage['messageContent']['playersBanner'] = f"Stopped a match with {match.playersString}{' on **' + match.map + '**' if match.map else ''} before completing it.\n"
-            discordMessage['messageContent']['banMetadata'] = ''
-            discordMessage['messageContent']['matchScore'] = f"The score was **{match.scores['blue']}**:**{match.scores['red']}**{', we were playing on **' + match.playingOnSide + '**' if match.playingOnSide else ''}.\n"
-            discordMessage['messageContent']['roundMetadata'] = ''
-            discordMessage['messageContent']['roundLineup'] = ''
+        discordMessage['messageContent']['matchScore'] = f"The score was **{match.scores['blue']}**:**{match.scores['red']}**{', we were playing on **' + match.playingOnSide + '**' if match.playingOnSide else ''}.\n"
+        discordMessage['messageContent']['roundMetadata'] = ''
+        discordMessage['messageContent']['roundLineup'] = ''
+        discordMessage['messageContent']['banMetadata'] = ''
         discordMessage['messageContent']['actionPrompt'] = ''
+        discordMessage['reactions'] = []
         await self.bot.sendMessage(ctx, discordMessage, True)
             
         self.bot.cursor.execute("DELETE FROM matches WHERE server_id = ?", (str(ctx.guild.id),))

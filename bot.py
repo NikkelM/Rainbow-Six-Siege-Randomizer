@@ -41,8 +41,33 @@ class RainbowBot(commands.Bot):
             await bot.load_extension(f'cogs.{cog}')
         await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.playing, name='!startMatch | !help'))
 
-    def resetDiscordMessage(self, ctx: commands.Context):
-        self.cursor.execute("DELETE FROM matches WHERE server_id = ?", (str(ctx.guild.id),))
+    async def on_reaction_add(self, reaction: discord.Reaction, user: discord.User):
+        """Handles reactions being added to messages."""
+        ctx: commands.Context = await self.get_context(reaction.message)
+        match, discordMessage, canContinue = await self.getMatchData(ctx)
+
+        if discordMessage is None or discordMessage['matchMessageId'] != reaction.message.id or user == bot.user:
+            return     
+        if user.mention not in [player['mention'] for player in match.players] or reaction.emoji not in discordMessage['reactions'] or not canContinue:
+            await reaction.message.remove_reaction(reaction, user)
+            return
+
+        # TODO: In all commands, only delete the message if the command wasn't triggered from an emoji reaction.
+        # There must be a better way of doing so than checking if the context is valid.
+        await reaction.message.remove_reaction(reaction, user)
+        if reaction.emoji == '🇼':
+            await self.get_cog('Ongoing Match')._won(ctx)
+        elif reaction.emoji == '🇱':
+            await self.get_cog('Ongoing Match')._lost(ctx)
+        elif reaction.emoji == '⚔️':
+            return
+        elif reaction.emoji == '🛡️':
+            return
+        elif reaction.emoji == '🔁':
+            await self.get_cog('Ongoing Match')._reshuffle(ctx)
+
+    def resetDiscordMessage(self, serverId: str):
+        self.cursor.execute("DELETE FROM matches WHERE server_id = ?", (serverId,))
         self.conn.commit()
         return {
             'matchMessageId': None,
@@ -57,7 +82,7 @@ class RainbowBot(commands.Bot):
             'reactions': []
         }
 
-    async def sendMessage(self, ctx: commands.Context, discordMessage, forgetMessage=False):
+    async def sendMessage(self, ctx: commands.Context, discordMessage, forgetMatch=False):
         message = '\n'.join([v for v in discordMessage['messageContent'].values() if v != ''])
 
         if discordMessage['matchMessageId']:
@@ -69,16 +94,16 @@ class RainbowBot(commands.Bot):
         
         await self._manageReactions(matchMessage, discordMessage)
 
-        if forgetMessage:
-                self.resetDiscordMessage(ctx)
-                return
+        if forgetMatch:
+            self.resetDiscordMessage(ctx.guild.id)
+            return
 
         self.saveDiscordMessage(ctx, discordMessage)
     
     async def _manageReactions(self, message: discord.Message, discordMessage):
         currentReactions = [r.emoji for r in message.reactions]
 
-        for reaction in currentReactions:
+        for reaction in reversed(currentReactions):
             if reaction not in discordMessage['reactions']:
                 await message.clear_reaction(reaction)
 
@@ -105,6 +130,7 @@ class RainbowBot(commands.Bot):
         self.conn.commit()
 
     async def getMatchData(self, ctx: commands.Context):
+        """Gets the match data and discord message from the database. If there is no match in progress, it will return a message to the user. If there is a match in progress, it will return the match data and discord message."""
         serverId = str(ctx.guild.id)
         matchData, discordMessage = None, None
         result = self.cursor.execute("SELECT match_data, discord_message FROM matches WHERE server_id = ?", (serverId,)).fetchone()
@@ -112,9 +138,9 @@ class RainbowBot(commands.Bot):
         if result is not None:
             matchData, discordMessage = result
             matchData = json.loads(matchData) if matchData is not None else None
-            discordMessage = json.loads(discordMessage) if discordMessage is not None else self.resetDiscordMessage(ctx)
+            discordMessage = json.loads(discordMessage) if discordMessage is not None else self.resetDiscordMessage(ctx.guild.id)
         else:
-            discordMessage = self.resetDiscordMessage(ctx)
+            discordMessage = self.resetDiscordMessage(ctx.guild.id)
 
         if matchData is None:
             discordMessage['messageContent']['playersBanner'] = 'No match in progress. Use "**!startMatch @player1 @player2...**" to start a new match.'
