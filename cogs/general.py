@@ -1,7 +1,7 @@
 from discord.ext import commands
 from bot import RainbowBot
-from version import __version__ as VERSION
 from botHelp import CustomHelpCommand
+from version import __version__ as VERSION
 
 class General(commands.Cog, name='General'):
     """This category contains commands that are related to managing the bot itself."""
@@ -11,17 +11,17 @@ class General(commands.Cog, name='General'):
         bot.help_command.cog = self
 
     @commands.command(aliases=['repeatMessage', 'repeat', 'sayAgain'])
-    async def _repeatMessage(self, ctx):
+    async def _repeatMessage(self, ctx: commands.Context):
         """Sends the last message sent by the bot again as a new message."""
-        _, discordMessage, canContinue = await self.bot._getMatchData(ctx)
+        _, discordMessage, canContinue = await self.bot.getMatchData(ctx)
         if not canContinue:
             return
 
         discordMessage['matchMessageId'] = None
-        await self.bot._sendMessage(ctx, discordMessage)
+        await self.bot.sendMessage(ctx, discordMessage)
 
     @commands.command(name='version')
-    async def _version(self, ctx):
+    async def _version(self, ctx: commands.Context):
         """Displays the version of the bot."""
         await ctx.send(f'RandomSixBot is running on v{VERSION}.')
 

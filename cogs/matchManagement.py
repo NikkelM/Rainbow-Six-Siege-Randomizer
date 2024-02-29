@@ -1,5 +1,6 @@
 from discord.ext import commands
 import json
+import re
 from rainbow import RainbowMatch
 from bot import RainbowBot
 
@@ -9,7 +10,7 @@ class MatchManagement(commands.Cog, name='Match Management'):
         self.bot: RainbowBot = bot
 
     @commands.command(aliases=['startMatch', 'start', 'play'], category='Rainbow Six')
-    async def _startMatch(self, ctx, *playerNames):
+    async def _startMatch(self, ctx: commands.Context, *playerNames):
         """Starts a new match with up to five players. Use **!startMatch @player1 @player2...** to start a match with the mentioned players."""
         serverId = str(ctx.guild.id)
         matchData = self.bot.cursor.execute("SELECT match_data FROM matches WHERE server_id = ?", (serverId,)).fetchone()
@@ -19,29 +20,29 @@ class MatchManagement(commands.Cog, name='Match Management'):
             discordMessage = self.bot.cursor.execute("SELECT discord_message FROM matches WHERE server_id = ?", (serverId,)).fetchone()[0]
             discordMessage = json.loads(discordMessage)
             discordMessage['messageContent']['actionPrompt'] = 'A match is already in progress. Use **!another** to start a new match with the same players or **!goodnight** to end the session.'
-            await self.bot._sendMessage(ctx, discordMessage)
+            await self.bot.sendMessage(ctx, discordMessage)
             return
 
         match = RainbowMatch()
-        discordMessage = self.bot._resetDiscordMessage(ctx)
+        discordMessage = self.bot.resetDiscordMessage(ctx)
         self.bot.cursor.execute("INSERT INTO matches (server_id, discord_message) VALUES (?, ?)", (serverId, json.dumps(discordMessage)))
 
         if len(playerNames) > 5:
             discordMessage['messageContent']['playersBanner'] = 'You can only start a match with up to **five** players! Use "**!startMatch @player1 @player2...**" to try again.'
-            await self.bot._sendMessage(ctx, discordMessage)
+            await self.bot.sendMessage(ctx, discordMessage)
             return
         elif len(playerNames) > 0:
-            playerObjects = self.bot._validatePlayerNames(ctx, playerNames)
+            playerObjects = self._validatePlayerNames(ctx, playerNames)
             if playerObjects is not None:
                 match.setPlayers(playerObjects)
                 discordMessage['messageContent']['playersBanner'] = f"Starting a new match with {match.playersString}{' on **' + match.map + '**' if match.map else ''}.\n"
             else:
                 discordMessage['messageContent']['playersBanner'] = 'At least one of the players you mentioned is not on this server, please try again.'
-                await self.bot._sendMessage(ctx, discordMessage)
+                await self.bot.sendMessage(ctx, discordMessage)
                 return
         else:
             discordMessage['messageContent']['playersBanner'] = 'You can start a match using "**!startMatch @player1 @player2...**".'
-            await self.bot._sendMessage(ctx, discordMessage, True)
+            await self.bot.sendMessage(ctx, discordMessage, True)
             return
 
         discordMessage['messageContent']['banMetadata'] = f'Ban the **{match.getMapBan()}** map in rotation, and these operators:\n'
@@ -53,71 +54,71 @@ class MatchManagement(commands.Cog, name='Match Management'):
 
         discordMessage['messageContent']['actionPrompt'] = 'Next, use "**!setMap map**" and "**!ban op1 op2...**"'
 
-        self.bot._saveMatch(ctx, match)
-        await self.bot._sendMessage(ctx, discordMessage)
+        self.bot.saveMatch(ctx, match)
+        await self.bot.sendMessage(ctx, discordMessage)
 
     @commands.command(aliases=['addPlayers', 'addPlayer'])
-    async def _addPlayers(self, ctx, *playerNames):
+    async def _addPlayers(self, ctx: commands.Context, *playerNames):
         """Adds additional players to the match. Use **!addPlayers @player1 @player2...** to add the mentioned players to the match. The total number of players cannot exceed five, use **!removePlayers** first if you need to."""
-        match, discordMessage, canContinue = await self.bot._getMatchData(ctx)
+        match, discordMessage, canContinue = await self.bot.getMatchData(ctx)
         if not canContinue:
             return
         await ctx.message.delete()
 
         if len(playerNames) + len(match.players) > 5:
             discordMessage['messageContent']['playersBanner'] = f"A match can only have up to **five** players! **!removePlayers** first if you need to. Current players are {match.playersString}{', playing on **' + match.map + '**' if match.map else ''}.\n"
-            await self.bot._sendMessage(ctx, discordMessage)
+            await self.bot.sendMessage(ctx, discordMessage)
             return
         elif len(playerNames) > 0:
-            playerObjects = self.bot._validatePlayerNames(ctx, playerNames)
+            playerObjects = self._validatePlayerNames(ctx, playerNames)
             if playerObjects is not None:
                 match.setPlayers(playerObjects + match.players)
                 discordMessage['messageContent']['playersBanner'] = f"Player{'s' if len(playerNames) > 1 else ''} added! Current players are {match.playersString}{', playing on **' + match.map + '**' if match.map else ''}.\n"
             else:
                 discordMessage['messageContent']['playersBanner'] = f"At least one of the players you mentioned is not on this server. Current players are {match.playersString}{', playing on **' + match.map + '**' if match.map else ''}.\n"
-                await self.bot._sendMessage(ctx, discordMessage)
+                await self.bot.sendMessage(ctx, discordMessage)
                 return
         else:
             discordMessage['messageContent']['playersBanner'] = f"No new player passed with the command. Current players are {match.playersString}{', playing on **' + match.map + '**' if match.map else ''}.\n"
-            await self.bot._sendMessage(ctx, discordMessage)
+            await self.bot.sendMessage(ctx, discordMessage)
             return
 
-        self.bot._saveMatch(ctx, match)
-        await self.bot._sendMessage(ctx, discordMessage)
+        self.bot.saveMatch(ctx, match)
+        await self.bot.sendMessage(ctx, discordMessage)
 
     @commands.command(aliases=['removePlayers', 'removePlayer'])
-    async def _removePlayers(self, ctx, *playerNames):
+    async def _removePlayers(self, ctx: commands.Context, *playerNames):
         """Removes players from the match. Use **!removePlayers @player1 @player2...** to remove the mentioned players from the match. At least one player must remain in the match."""
-        match, discordMessage, canContinue = await self.bot._getMatchData(ctx)
+        match, discordMessage, canContinue = await self.bot.getMatchData(ctx)
         if not canContinue:
             return
         await ctx.message.delete()
 
         if len(playerNames) > 0:
-            playerObjects = self.bot._validatePlayerNames(ctx, playerNames)
+            playerObjects = self._validatePlayerNames(ctx, playerNames)
             if playerObjects is not None:
                 removalSuccessful = match.removePlayers(playerObjects)
                 if not removalSuccessful:
                     discordMessage['messageContent']['playersBanner'] = f"You cannot remove all players from the match! Current players are {match.playersString}{', playing on **' + match.map + '**' if match.map else ''}.\n"
-                    await self.bot._sendMessage(ctx, discordMessage)
+                    await self.bot.sendMessage(ctx, discordMessage)
                     return
                 discordMessage['messageContent']['playersBanner'] = f"Player{'s' if len(playerNames) > 1 else ''} removed! Current players are {match.playersString}{', playing on **' + match.map + '**' if match.map else ''}.\n"
             else:
                 discordMessage['messageContent']['playersBanner'] = f"At least one of the players you mentioned is not on this server. Current players are {match.playersString}{', playing on **' + match.map + '**' if match.map else ''}.\n"
-                await self.bot._sendMessage(ctx, discordMessage)
+                await self.bot.sendMessage(ctx, discordMessage)
                 return
         else:
             discordMessage['messageContent']['playersBanner'] = f"No player removed. Current players are {match.playersString}{', playing on **' + match.map + '**' if match.map else ''}.\n"
-            await self.bot._sendMessage(ctx, discordMessage)
+            await self.bot.sendMessage(ctx, discordMessage)
             return
 
-        self.bot._saveMatch(ctx, match)
-        await self.bot._sendMessage(ctx, discordMessage)
+        self.bot.saveMatch(ctx, match)
+        await self.bot.sendMessage(ctx, discordMessage)
 
     @commands.command(aliases=['another', 'again'])
-    async def _another(self, ctx):
+    async def _another(self, ctx: commands.Context):
         """Starts a new match with the same players as the previous one."""
-        match, discordMessage, canContinue = await self.bot._getMatchData(ctx)
+        match, discordMessage, canContinue = await self.bot.getMatchData(ctx)
         if not canContinue:
             return
             
@@ -128,7 +129,7 @@ class MatchManagement(commands.Cog, name='Match Management'):
             discordMessage['messageContent']['roundMetadata'] = ''
             discordMessage['messageContent']['roundLineup'] = ''
         discordMessage['messageContent']['actionPrompt'] = ''
-        await self.bot._sendMessage(ctx, discordMessage, True)
+        await self.bot.sendMessage(ctx, discordMessage, True)
             
         self.bot.cursor.execute("DELETE FROM matches WHERE server_id = ?", (str(ctx.guild.id),))
         self.bot.conn.commit()
@@ -137,9 +138,9 @@ class MatchManagement(commands.Cog, name='Match Management'):
         await self._startMatch(ctx, *playerIdStrings)
 
     @commands.command(aliases=['goodnight', 'bye'])
-    async def _goodnight(self, ctx):
+    async def _goodnight(self, ctx: commands.Context):
         """Ends the current match and/or session."""
-        match, discordMessage, canContinue = await self.bot._getMatchData(ctx)
+        match, discordMessage, canContinue = await self.bot.getMatchData(ctx)
         if not canContinue:
             return
         await ctx.message.delete()
@@ -153,10 +154,25 @@ class MatchManagement(commands.Cog, name='Match Management'):
         discordMessage['messageContent']['roundLineup'] = ''
         discordMessage['messageContent']['banMetadata'] = ''
         discordMessage['messageContent']['actionPrompt'] = 'Ending the session here...\nUse **!startMatch** to start a new match.'
-        await self.bot._sendMessage(ctx, discordMessage)
+        await self.bot.sendMessage(ctx, discordMessage)
 
         self.bot.cursor.execute("DELETE FROM matches WHERE server_id = ?", (str(ctx.guild.id),))
         self.bot.conn.commit()
+
+    def _validatePlayerNames(self, ctx: commands.Context, playerNames):
+        playerIds = [re.findall(r'\d+', name) for name in playerNames if name.startswith('<@')]
+        playerIds = [item for sublist in playerIds for item in sublist]
+
+        members = [str(member.id) for member in ctx.guild.members]
+
+        playerObjects = []
+        for playerId in playerIds:
+            if playerId not in members:
+                return None
+            else:
+                playerObjects.append(ctx.guild.get_member(int(playerId)))
+
+        return playerObjects
 
 async def setup(bot: RainbowBot):
     await bot.add_cog(MatchManagement(bot))

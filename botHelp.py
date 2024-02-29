@@ -4,7 +4,7 @@ import re
 
 class CustomHelpCommand(commands.HelpCommand):
     """Overwrites the default help command for a better looking help message."""
-    def get_command_signature(self, command):
+    def get_command_signature(self, command: commands.Command):
         return '%s%s %s' % (self.context.clean_prefix, command.qualified_name, command.signature)
     
     async def send_error_message(self, error):
@@ -36,7 +36,7 @@ class CustomHelpCommand(commands.HelpCommand):
 
         await self.get_destination().send(embed=embed)
 
-    async def send_command_help(self, command):
+    async def send_command_help(self, command: commands.Command):
         embed = discord.Embed(title=re.sub(r'!_', '!', self.get_command_signature(command)), color=discord.Color.from_rgb(57, 255, 20))
         if command.help:
             embed.description = command.help
@@ -46,10 +46,10 @@ class CustomHelpCommand(commands.HelpCommand):
         channel = self.get_destination()
         await channel.send(embed=embed)
 
-    async def send_group_help(self, group):
+    async def send_group_help(self, group: commands.Group):
         title = self.get_command_signature(group)
         await self.send_help_embed(title, group.help, group.commands)
 
-    async def send_cog_help(self, cog):
+    async def send_cog_help(self, cog: commands.Cog):
         title = cog.qualified_name or "No"
         await self.send_help_embed(f'{title} Category', cog.description, cog.get_commands())
