@@ -5,7 +5,7 @@ from rainbow import RainbowMatch
 from bot import RainbowBot
 
 class MatchManagement(commands.Cog, name='Match Management'):
-    """This category contains commands relevant to setting up matches."""
+    """Commands related to setting up matches and managing players."""
     def __init__(self, bot):
         self.bot: RainbowBot = bot
 

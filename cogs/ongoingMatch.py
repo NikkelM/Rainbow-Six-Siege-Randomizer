@@ -2,7 +2,7 @@ from discord.ext import commands
 from bot import RainbowBot
 
 class OngoingMatch(commands.Cog, name='Ongoing Match'):
-    """Commands to interact with an ongoing match, such as banning operators or resolving rounds."""
+    """Commands to interact with an ongoing match, such as banning operators or playing rounds."""
     def __init__(self, bot):
         self.bot: RainbowBot = bot
 
@@ -60,7 +60,7 @@ class OngoingMatch(commands.Cog, name='Ongoing Match'):
         await ctx.message.delete()
         await self._playMatch(ctx, 'defense')
 
-    @commands.command(name='won')
+    @commands.command(aliases=['won', 'w'])
     async def _won(self, ctx: commands.Context, overtimeSide=None):
         """Marks the current round as won and starts a new round. If winning starts overtime, you must specify the side you start overtime on with **!won attack** or **!won defense**."""
         match, discordMessage, canContinue = await self.bot.getMatchData(ctx)
@@ -88,7 +88,7 @@ class OngoingMatch(commands.Cog, name='Ongoing Match'):
             self.bot.saveDiscordMessage(ctx, discordMessage)
             await self._endMatch(ctx)
 
-    @commands.command(name='lost')
+    @commands.command(aliases=['lost', 'l'])
     async def _lost(self, ctx: commands.Context, overtimeSide=None):
         """Marks the current round as lost and starts a new round. If losing starts overtime, you must specify the side you start overtime on with **!lost attack** or **!lost defense**."""
         match, discordMessage, canContinue = await self.bot.getMatchData(ctx)

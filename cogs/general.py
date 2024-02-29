@@ -4,7 +4,7 @@ from botHelp import CustomHelpCommand
 from version import __version__ as VERSION
 
 class General(commands.Cog, name='General'):
-    """This category contains commands that are related to managing the bot itself."""
+    """Commands that allow you to manage the bot itself."""
     def __init__(self, bot):
         self.bot: RainbowBot = bot
         bot.help_command = CustomHelpCommand()

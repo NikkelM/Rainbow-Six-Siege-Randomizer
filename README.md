@@ -16,13 +16,14 @@ The bot has the following commands:
 | `!unban` | List of operator names | Unbans the given operators from the match. |
 | `!attack`, `!startAttack` | | Starts the match on the attacking side. If called during an ongoing match, shuffles a new attack phase without changing the score. |
 | `!defense`, `!startDefense`, `!defend` | | Starts the match on the defending side. If called during an ongoing match, shuffles a new defense phase without changing the score. |
-| `!won` | `attack` or `defense`, if winning starts overtime | Resolves the ongoing round as won, updating the scores and starting a new round. If winning started overtime, `attack` must be supplied if starting overtime on attack, otherwise `defense`. |
-| `!lost` | `attack` or `defense`, if losing starts overtime | Resolves the ongoing round as lost, updating the scores and starting a new round. If losing started overtime, `attack` must be supplied if starting overtime on attack, otherwise `defense`. |
+| `!won`, `!w` | `attack` or `defense`, if winning starts overtime | Resolves the ongoing round as won, updating the scores and starting a new round. If winning started overtime, `attack` must be supplied if starting overtime on attack, otherwise `defense`. |
+| `!lost`, `!l` | `attack` or `defense`, if losing starts overtime | Resolves the ongoing round as lost, updating the scores and starting a new round. If losing started overtime, `attack` must be supplied if starting overtime on attack, otherwise `defense`. |
 | `!reshuffle`, `!shuffle` | | Shuffles the current round again to provide a new set of operators. |
 | `!another`, `!again` | | Starts a new match with the same players. |
 | `!goodnight`, `!bye` | | Ends the session. |
 | `!repeatMessage`, `!repeat`, `!sayAgain` | | Sends the last message sent or edited by the bot again as a new message. |
 | `!version` | | Shows the current version of the bot. |
+| `!help` | | Shows a list of all commands and their descriptions. Use `!help command` to view a description of a specific command, and `!help category` to view all commands from the given category. |
 
 ## Setup
 
