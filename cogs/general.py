@@ -23,7 +23,7 @@ class General(commands.Cog, name='General'):
     @commands.command(name='version')
     async def _version(self, ctx: commands.Context):
         """Displays the version of the bot."""
-        await ctx.send(f'RandomSixBot is running on v{VERSION}.')
+        await ctx.send(f'RandomSixBot is running on **v{VERSION}**.')
 
 async def setup(bot: RainbowBot):
     await bot.add_cog(General(bot))
