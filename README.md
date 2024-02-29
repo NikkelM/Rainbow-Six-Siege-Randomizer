@@ -8,18 +8,22 @@ The bot has the following commands:
 
 | Command | Argument | Description |
 | ------- | -------- | ----------- |
-| `!startMatch` | List of `@Player` mentions | Starts a new match with the given players. Must be used in order for any other command to work. |
-| `!addPlayers` | List of `@Player` mentions | Adds the given players to the match. |
-| `!removePlayers` | List of `@Player` mentions | Removes the given players from the match. At least one player must remain in the match. |
-| `!setMap` | A valid `map` | Sets the map that is being played. |
+| `!startMatch`, `!start`, `!play` | List of `@Player` mentions | Starts a new match with the given players. Must be used in order for any other command to work. |
+| `!addPlayers`, `!addPlayer` | List of `@Player` mentions | Adds the given players to the match. |
+| `!removePlayers`, `!removePlayer` | List of `@Player` mentions | Removes the given players from the match. At least one player must remain in the match. |
+| `!setMap`, `!map` | A valid `map` | Sets the map that is being played. |
 | `!ban` | List of operator names | Bans the given operators from the match. |
 | `!unban` | List of operator names | Unbans the given operators from the match. |
-| `!startAttack` | | Starts the match on the attacking side. If called during an ongoing match, shuffles a new attack phase without changing the score. |
-| `!startDefense` | | Starts the match on the defending side. If called during an ongoing match, shuffles a new defense phase without changing the score. |
-| `!won` | `attack` or `defense`, if winning starts overtime | Resolves the ongoing round as won, updating the scores and starting a new round. If winning started overtime, `attack` must be supplied if starting overtime on attack, otherwise `defense`. |
-| `!lost` | `attack` or `defense`, if losing starts overtime | Resolves the ongoing round as lost, updating the scores and starting a new round. If losing started overtime, `attack` must be supplied if starting overtime on attack, otherwise `defense`. |
-| `!another` | | Starts a new match with the same players. |
-| `!goodnight` | | Ends the session. |
+| `!attack`, `!startAttack` | | Starts the match on the attacking side. If called during an ongoing match, shuffles a new attack phase without changing the score. |
+| `!defense`, `!startDefense`, `!defend` | | Starts the match on the defending side. If called during an ongoing match, shuffles a new defense phase without changing the score. |
+| `!won`, `!w` | `attack` or `defense`, if winning starts overtime | Resolves the ongoing round as won, updating the scores and starting a new round. If winning started overtime, `attack` must be supplied if starting overtime on attack, otherwise `defense`. |
+| `!lost`, `!l` | `attack` or `defense`, if losing starts overtime | Resolves the ongoing round as lost, updating the scores and starting a new round. If losing started overtime, `attack` must be supplied if starting overtime on attack, otherwise `defense`. |
+| `!reshuffle`, `!shuffle` | | Shuffles the current round again to provide a new set of operators. |
+| `!another`, `!again` | | Starts a new match with the same players. |
+| `!goodnight`, `!bye` | | Ends the session. |
+| `!repeatMessage`, `!repeat`, `!sayAgain` | | Sends the last message sent or edited by the bot again as a new message. |
+| `!version` | | Shows the current version of the bot. |
+| `!help` | | Shows a list of all commands and their descriptions. Use `!help command` to view a description of a specific command, and `!help category` to view all commands from the given category. |
 
 ## Setup
 
