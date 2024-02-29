@@ -61,20 +61,36 @@ class RainbowBot(commands.Bot):
         message = '\n'.join([v for v in discordMessage['messageContent'].values() if v != ''])
 
         if discordMessage['matchMessageId']:
-            match_message = await ctx.channel.fetch_message(discordMessage['matchMessageId'])
-            await match_message.edit(content=message)
+            matchMessage = await ctx.channel.fetch_message(discordMessage['matchMessageId'])
+            await matchMessage.edit(content=message)
         else:
-            match_message = (await ctx.send(message))
-            discordMessage['matchMessageId'] = match_message.id
+            matchMessage = (await ctx.send(message))
+            discordMessage['matchMessageId'] = matchMessage.id
         
-        for reaction in discordMessage['reactions']:
-            await match_message.add_reaction(reaction)
+        await self._manageReactions(matchMessage, discordMessage)
 
         if forgetMessage:
-            self.resetDiscordMessage(ctx)
-            return
+                self.resetDiscordMessage(ctx)
+                return
 
         self.saveDiscordMessage(ctx, discordMessage)
+    
+    async def _manageReactions(self, message: discord.Message, discordMessage):
+        currentReactions = [r.emoji for r in message.reactions]
+
+        for reaction in discordMessage['reactions']:
+            if reaction in currentReactions:
+                reaction = next((r for r in message.reactions if r.emoji == reaction), None)
+                if reaction and reaction.count > 1:
+                    users = [user async for user in reaction.users()]
+                    for user in users[1:]:
+                        await message.remove_reaction(reaction, user)
+            else:
+                await message.add_reaction(reaction)
+
+        for reaction in currentReactions:
+            if reaction not in discordMessage['reactions']:
+                await message.clear_reaction(reaction)
     
     def saveMatch(self, ctx: commands.Context, match):
         serverId = str(ctx.guild.id)
