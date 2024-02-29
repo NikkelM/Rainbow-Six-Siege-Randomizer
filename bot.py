@@ -53,7 +53,8 @@ class RainbowBot(commands.Bot):
                 'roundMetadata': '',
                 'roundLineup': '',
                 'actionPrompt': ''
-            }
+            },
+            'reactions': []
         }
 
     async def sendMessage(self, ctx: commands.Context, discordMessage, forgetMessage=False):
@@ -63,7 +64,12 @@ class RainbowBot(commands.Bot):
             match_message = await ctx.channel.fetch_message(discordMessage['matchMessageId'])
             await match_message.edit(content=message)
         else:
-            discordMessage['matchMessageId'] = (await ctx.send(message)).id
+            match_message = (await ctx.send(message))
+            discordMessage['matchMessageId'] = match_message.id
+        
+        for reaction in discordMessage['reactions']:
+            await match_message.add_reaction(reaction)
+
         if forgetMessage:
             self.resetDiscordMessage(ctx)
             return
