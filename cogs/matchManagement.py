@@ -64,7 +64,8 @@ class MatchManagement(commands.Cog, name='Match Management'):
         match, discordMessage, canContinue = await self.bot.getMatchData(ctx)
         if not canContinue:
             return
-        await ctx.message.delete()
+        if ctx.message.id != discordMessage['matchMessageId'] or not discordMessage['matchMessageId']:
+            await ctx.message.delete()
 
         if len(playerNames) + len(match.players) > 5:
             discordMessage['messageContent']['playersBanner'] = f"A match can only have up to **five** players! **!removePlayers** first if you need to. Current players are {match.playersString}{', playing on **' + match.map + '**' if match.map else ''}.\n"
@@ -93,7 +94,8 @@ class MatchManagement(commands.Cog, name='Match Management'):
         match, discordMessage, canContinue = await self.bot.getMatchData(ctx)
         if not canContinue:
             return
-        await ctx.message.delete()
+        if ctx.message.id != discordMessage['matchMessageId'] or not discordMessage['matchMessageId']:
+            await ctx.message.delete()
 
         if len(playerNames) > 0:
             playerObjects = self._validatePlayerNames(ctx, playerNames)
@@ -145,7 +147,8 @@ class MatchManagement(commands.Cog, name='Match Management'):
         match, discordMessage, canContinue = await self.bot.getMatchData(ctx)
         if not canContinue:
             return
-        await ctx.message.delete()
+        if ctx.message.id != discordMessage['matchMessageId'] or not discordMessage['matchMessageId']:
+            await ctx.message.delete()
 
         if not match.isMatchFinished():
             discordMessage['messageContent']['playersBanner'] = f"Stopped a match with {match.playersString}{' on **' + match.map + '**' if match.map else ''} before completing it.\n"

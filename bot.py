@@ -52,19 +52,39 @@ class RainbowBot(commands.Bot):
             await reaction.message.remove_reaction(reaction, user)
             return
 
-        # TODO: In all commands, only delete the message if the command wasn't triggered from an emoji reaction.
-        # There must be a better way of doing so than checking if the context is valid.
         await reaction.message.remove_reaction(reaction, user)
         if reaction.emoji == '🇼':
             await self.get_cog('Ongoing Match')._won(ctx)
         elif reaction.emoji == '🇱':
             await self.get_cog('Ongoing Match')._lost(ctx)
         elif reaction.emoji == '⚔️':
-            return
+            if match.currRound == 0:
+                await self.get_cog('Ongoing Match')._startAttack(ctx)
+            elif (match.currRound == 6 and match.scores["red"] == 3):
+                await self.get_cog('Ongoing Match')._won(ctx, 'attack')
+            elif (match.currRound == 6 and match.scores["blue"] == 3):
+                await self.get_cog('Ongoing Match')._lost(ctx, 'attack')
+            else:
+                print('Unknown reaction/match state combination: ⚔️', match.currRound, match.scores)
         elif reaction.emoji == '🛡️':
-            return
+            if match.currRound == 0:
+                await self.get_cog('Ongoing Match')._startDefense(ctx)
+            elif (match.currRound == 6 and match.scores["red"] == 3):
+                await self.get_cog('Ongoing Match')._won(ctx, 'defense')
+            elif (match.currRound == 6 and match.scores["blue"] == 3):
+                await self.get_cog('Ongoing Match')._lost(ctx, 'defense')
+            else:
+                print('Unknown reaction/match state combination: 🛡️', match.currRound, match.scores)
         elif reaction.emoji == '🔁':
             await self.get_cog('Ongoing Match')._reshuffle(ctx)
+        elif reaction.emoji == '👍':
+            await ctx.send('Starting **!another** match...')
+            await self.get_cog('Match Management')._another(ctx)
+        elif reaction.emoji == '👎':
+            await self.get_cog('Match Management')._goodnight(ctx)
+        else:
+            print('Unknown reaction:', reaction.emoji)
+            return
 
     def resetDiscordMessage(self, serverId: str):
         self.cursor.execute("DELETE FROM matches WHERE server_id = ?", (serverId,))
