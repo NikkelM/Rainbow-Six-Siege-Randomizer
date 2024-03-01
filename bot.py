@@ -123,9 +123,12 @@ class RainbowBot(commands.Bot):
     async def _manageReactions(self, message: discord.Message, discordMessage):
         currentReactions = [r.emoji for r in message.reactions]
 
-        for reaction in reversed(currentReactions):
-            if reaction not in discordMessage['reactions']:
-                await message.clear_reaction(reaction)
+        if not any(reaction in discordMessage['reactions'] for reaction in currentReactions):
+            await message.clear_reactions()
+        else:
+            for reaction in reversed(currentReactions):
+                if reaction not in discordMessage['reactions']:
+                    await message.clear_reaction(reaction)
 
         for reaction in discordMessage['reactions']:
             if reaction in currentReactions:
