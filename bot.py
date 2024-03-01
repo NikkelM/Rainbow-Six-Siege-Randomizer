@@ -1,7 +1,7 @@
 import discord
+from itertools import zip_longest
 import json
 import os
-import re
 import sqlite3
 from discord.ext import commands
 from dotenv import load_dotenv
@@ -111,14 +111,14 @@ class RainbowBot(commands.Bot):
         else:
             matchMessage = (await ctx.send(message))
             discordMessage['matchMessageId'] = matchMessage.id
-        
-        await self._manageReactions(matchMessage, discordMessage)
 
         if forgetMatch:
+            await matchMessage.clear_reactions()
             self.resetDiscordMessage(ctx.guild.id)
-            return
-
-        self.saveDiscordMessage(ctx, discordMessage)
+            self.saveDiscordMessage(ctx, discordMessage)
+        else:
+            self.saveDiscordMessage(ctx, discordMessage)
+            await self._manageReactions(matchMessage, discordMessage)
     
     async def _manageReactions(self, message: discord.Message, discordMessage):
         currentReactions = [r.emoji for r in message.reactions]
@@ -126,19 +126,23 @@ class RainbowBot(commands.Bot):
         if not any(reaction in discordMessage['reactions'] for reaction in currentReactions):
             await message.clear_reactions()
         else:
+            # Remove extra reactions from right to left
             for reaction in reversed(currentReactions):
                 if reaction not in discordMessage['reactions']:
                     await message.clear_reaction(reaction)
 
-        for reaction in discordMessage['reactions']:
-            if reaction in currentReactions:
-                reaction = next((r for r in message.reactions if r.emoji == reaction), None)
-                if reaction and reaction.count > 1:
-                    users = [user async for user in reaction.users()]
-                    for user in users[1:]:
-                        await message.remove_reaction(reaction, user)
-            else:
-                await message.add_reaction(reaction)
+        # Make sure the reactions are in the correct order and remove user-added reaction counts
+        for i, (current, expected) in enumerate(zip_longest(currentReactions, discordMessage['reactions'])):
+            if current != expected:
+                for reaction in currentReactions[i:]:
+                    await message.clear_reaction(reaction)
+                for reaction in discordMessage['reactions'][i:]:
+                    await message.add_reaction(reaction)
+                break
+            elif next((r for r in message.reactions if r.emoji == current), None).count > 1:
+                users = [user async for user in current.users()]
+                for user in users[1:]:
+                    await message.remove_reaction(current, user)
     
     def saveMatch(self, ctx: commands.Context, match):
         serverId = str(ctx.guild.id)
