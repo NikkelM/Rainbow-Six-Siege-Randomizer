@@ -46,7 +46,7 @@ class OngoingMatch(commands.Cog, name='Ongoing Match'):
         else:
             if match.reshuffles < 2:
                 discordMessage['messageContent']['actionPrompt'] += f'Use **!reshuffle** 🔁 to get new choices (**{2 - match.reshuffles}** remaining).\n'
-            discordMessage['messageContent']['actionPrompt'] += 'Use "**!won**" ⚔️ or "**!lost**" 🛡️ to continue.'
+            discordMessage['messageContent']['actionPrompt'] += 'Use "**!won**" 🇼 or "**!lost**" 🇱 to continue.'
 
         self.bot.saveMatch(ctx, match)
         await self.bot.sendMessage(ctx, discordMessage)
@@ -240,7 +240,7 @@ class OngoingMatch(commands.Cog, name='Ongoing Match'):
             discordMessage['reactions'] += ['⚔️', '🛡️', '🇱']
         elif match.scores["blue"] == 3:
             discordMessage['messageContent']['actionPrompt'] += 'If you lost, use "**!lost attack**" ⚔️ (or "**!lost defense**" 🛡️) to start overtime on the specified side, otherwise use **!won** 🇼 to end the match.'
-            discordMessage['reactions'] += ['⚔️', '🛡️', '🇼']
+            discordMessage['reactions'] += ['🇼', '⚔️', '🛡️']
 
         self.bot.saveMatch(ctx, match)
         await self.bot.sendMessage(ctx, discordMessage)
