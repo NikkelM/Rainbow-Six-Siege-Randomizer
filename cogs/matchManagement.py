@@ -11,7 +11,7 @@ class MatchManagement(commands.Cog, name='Match Management'):
 
     @commands.command(aliases=['startMatch', 'start', 'play'], category='Rainbow Six')
     async def _startMatch(self, ctx: commands.Context, *playerNames):
-        """Starts a new match with up to five players. Use **!startMatch @player1 @player2...** to start a match with the mentioned players."""
+        """Starts a new match with up to five players. Use **!startMatch @player1 @player2...** to start a match with the mentioned players. This command must be used before in order for any other match commands to work."""
         serverId = str(ctx.guild.id)
         matchData = self.bot.cursor.execute("SELECT match_data FROM matches WHERE server_id = ?", (serverId,)).fetchone()
 
