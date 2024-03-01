@@ -4,13 +4,26 @@ A discord bot that randomizes bans, operator selections and more for Rainbow Six
 
 ## Usage
 
-The bot has the following commands:
+The bot has the following commands, some of which can be invoked using a reaction instead of a message:
+
+### Match Management
+
+Commands related to setting up matches and managing players.
 
 | Command | Argument | Description |
 | ------- | -------- | ----------- |
-| `!startMatch`, `!start`, `!play` | List of `@Player` mentions | Starts a new match with up to five players. Use **!startMatch @player1 @player2...** to start a match with the mentioned players. |
+| `!startMatch`, `!start`, `!play` | List of `@Player` mentions | Starts a new match with up to five players. Use **!startMatch @player1 @player2...** to start a match with the mentioned players. This command must be used before in order for any other match commands to work. |
 | `!addPlayers`, `!addPlayer` | List of `@Player` mentions | Adds additional players to the match. Use **!addPlayers @player1 @player2...** to add the mentioned players to the match. The total number of players cannot exceed five, use **!removePlayers** first if you need to. |
 | `!removePlayers`, `!removePlayer` | List of `@Player` mentions | Removes players from the match. Use **!removePlayers @player1 @player2...** to remove the mentioned players from the match. At least one player must remain in the match. |
+| `!another`, `!again`, 👍 | | Starts a new match with the same players as the previous one. |
+| `!goodnight`, `!bye`, 👎 | | Ends the current match and/or session. |
+
+### Ongoing Match
+
+Commands to interact with an ongoing match, such as banning operators or playing rounds.
+
+| Command | Argument | Description |
+| ------- | -------- | ----------- |
 | `!setMap`, `!map` | A valid `map` | Sets the map for the match. This will influence the sites displayed for defensive rounds. Use **!setMap map** to set the map. A map can be set at any point in the match. |
 | `!ban` | List of operator names | Bans operators from the match. Use **!ban op1 op2...** to ban the mentioned operators from the match. You can ban as many operators as you like. |
 | `!unban` | List of operator names | Unbans operators from the match. Use **!unban op1 op2...** to unban the mentioned operators from the match. |
@@ -19,8 +32,13 @@ The bot has the following commands:
 | `!won`, `!w` | `attack` ⚔️ or `defense` 🛡️, if winning starts overtime | Marks the current round as won and starts a new round. If winning starts overtime, you must specify the side you start overtime on with **!won attack** ⚔️ or **!won defense** 🛡️. |
 | `!lost`, `!l` | `attack` ⚔️ or `defense` 🛡️, if losing starts overtime | Marks the current round as lost and starts a new round. If losing starts overtime, you must specify the side you start overtime on with **!lost attack** ⚔️ or **!lost defense** 🛡️. |
 | `!reshuffle`, `!shuffle`, 🔁 | | Reshuffles the operator choices and site (if playing on defense) for the current round. You can reshuffle up to twice per match. |
-| `!another`, `!again`, 👍 | | Starts a new match with the same players as the previous one. |
-| `!goodnight`, `!bye`, 👎 | | Ends the current match and/or session. |
+
+### General
+
+Commands that allow you to manage the bot itself.
+
+| Command | Argument | Description |
+| ------- | -------- | ----------- |
 | `!repeatMessage`, `!repeat`, `!sayAgain` | | Sends the last message sent by the bot again as a new message. |
 | `!version` | | Displays the version of the bot. |
 | `!help` | | Shows a list of all commands and their descriptions. Use `!help command` to view a description of a specific command, and `!help category` to view all commands from the given category. |
