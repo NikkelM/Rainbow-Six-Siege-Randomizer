@@ -76,7 +76,7 @@ class OngoingMatch(commands.Cog, name='Ongoing Match'):
             return
 
         if (match.currRound == 6 and match.scores["red"] == 3):
-            if not overtimeSide:
+            if not overtimeSide or overtimeSide not in ['attack', 'defense']:
                 discordMessage['messageContent']['actionPrompt'] = 'You must specify what side you start overtime on. Use **!won attack** ⚔️ or **!won defense** 🛡️.'
                 await self.bot.sendMessage(ctx, discordMessage)
                 return
@@ -105,7 +105,7 @@ class OngoingMatch(commands.Cog, name='Ongoing Match'):
             return
 
         if (match.currRound == 6 and match.scores["blue"] == 3):
-            if not overtimeSide:
+            if not overtimeSide or overtimeSide not in ['attack', 'defense']:
                 discordMessage['messageContent']['actionPrompt'] = 'You must specify what side you start overtime on. Use **!lost attack** ⚔️ or **!lost defense** 🛡️.'
                 await self.bot.sendMessage(ctx, discordMessage)
                 return
