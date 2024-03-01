@@ -1,7 +1,7 @@
 import discord
+from itertools import zip_longest
 import json
 import os
-import re
 import sqlite3
 from discord.ext import commands
 from dotenv import load_dotenv
@@ -41,8 +41,53 @@ class RainbowBot(commands.Bot):
             await bot.load_extension(f'cogs.{cog}')
         await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.playing, name='!startMatch | !help'))
 
-    def resetDiscordMessage(self, ctx: commands.Context):
-        self.cursor.execute("DELETE FROM matches WHERE server_id = ?", (str(ctx.guild.id),))
+    async def on_reaction_add(self, reaction: discord.Reaction, user: discord.User):
+        """Handles reactions being added to messages."""
+        ctx: commands.Context = await self.get_context(reaction.message)
+        match, discordMessage, canContinue = await self.getMatchData(ctx)
+
+        if discordMessage is None or discordMessage['matchMessageId'] != reaction.message.id or user == bot.user:
+            return     
+        if user.mention not in [player['mention'] for player in match.players] or reaction.emoji not in discordMessage['reactions'] or not canContinue:
+            await reaction.message.remove_reaction(reaction, user)
+            return
+
+        await reaction.message.remove_reaction(reaction, user)
+        if reaction.emoji == '🇼':
+            await self.get_cog('Ongoing Match')._won(ctx)
+        elif reaction.emoji == '🇱':
+            await self.get_cog('Ongoing Match')._lost(ctx)
+        elif reaction.emoji == '⚔️':
+            if match.currRound == 0:
+                await self.get_cog('Ongoing Match')._startAttack(ctx)
+            elif (match.currRound == 6 and match.scores["red"] == 3):
+                await self.get_cog('Ongoing Match')._won(ctx, 'attack')
+            elif (match.currRound == 6 and match.scores["blue"] == 3):
+                await self.get_cog('Ongoing Match')._lost(ctx, 'attack')
+            else:
+                print('Unknown reaction/match state combination: ⚔️', match.currRound, match.scores)
+        elif reaction.emoji == '🛡️':
+            if match.currRound == 0:
+                await self.get_cog('Ongoing Match')._startDefense(ctx)
+            elif (match.currRound == 6 and match.scores["red"] == 3):
+                await self.get_cog('Ongoing Match')._won(ctx, 'defense')
+            elif (match.currRound == 6 and match.scores["blue"] == 3):
+                await self.get_cog('Ongoing Match')._lost(ctx, 'defense')
+            else:
+                print('Unknown reaction/match state combination: 🛡️', match.currRound, match.scores)
+        elif reaction.emoji == '🔁':
+            await self.get_cog('Ongoing Match')._reshuffle(ctx)
+        elif reaction.emoji == '👍':
+            await ctx.send('Starting **!another** match...')
+            await self.get_cog('Match Management')._another(ctx)
+        elif reaction.emoji == '👎':
+            await self.get_cog('Match Management')._goodnight(ctx)
+        else:
+            print('Unknown reaction:', reaction.emoji)
+            return
+
+    def resetDiscordMessage(self, serverId: str):
+        self.cursor.execute("DELETE FROM matches WHERE server_id = ?", (serverId,))
         self.conn.commit()
         return {
             'matchMessageId': None,
@@ -53,22 +98,51 @@ class RainbowBot(commands.Bot):
                 'roundMetadata': '',
                 'roundLineup': '',
                 'actionPrompt': ''
-            }
+            },
+            'reactions': []
         }
 
-    async def sendMessage(self, ctx: commands.Context, discordMessage, forgetMessage=False):
+    async def sendMessage(self, ctx: commands.Context, discordMessage, forgetMatch=False):
         message = '\n'.join([v for v in discordMessage['messageContent'].values() if v != ''])
 
         if discordMessage['matchMessageId']:
-            match_message = await ctx.channel.fetch_message(discordMessage['matchMessageId'])
-            await match_message.edit(content=message)
+            matchMessage = await ctx.channel.fetch_message(discordMessage['matchMessageId'])
+            await matchMessage.edit(content=message)
         else:
-            discordMessage['matchMessageId'] = (await ctx.send(message)).id
-        if forgetMessage:
-            self.resetDiscordMessage(ctx)
-            return
+            matchMessage = (await ctx.send(message))
+            discordMessage['matchMessageId'] = matchMessage.id
 
-        self.saveDiscordMessage(ctx, discordMessage)
+        if forgetMatch:
+            await matchMessage.clear_reactions()
+            self.resetDiscordMessage(ctx.guild.id)
+            self.saveDiscordMessage(ctx, discordMessage)
+        else:
+            self.saveDiscordMessage(ctx, discordMessage)
+            await self._manageReactions(matchMessage, discordMessage)
+    
+    async def _manageReactions(self, message: discord.Message, discordMessage):
+        currentReactions = [r.emoji for r in message.reactions]
+
+        if not any(reaction in discordMessage['reactions'] for reaction in currentReactions):
+            await message.clear_reactions()
+        else:
+            # Remove extra reactions from right to left
+            for reaction in reversed(currentReactions):
+                if reaction not in discordMessage['reactions']:
+                    await message.clear_reaction(reaction)
+
+        # Make sure the reactions are in the correct order and remove user-added reaction counts
+        for i, (current, expected) in enumerate(zip_longest(currentReactions, discordMessage['reactions'])):
+            if current != expected:
+                for reaction in currentReactions[i:]:
+                    await message.clear_reaction(reaction)
+                for reaction in discordMessage['reactions'][i:]:
+                    await message.add_reaction(reaction)
+                break
+            elif next((r for r in message.reactions if r.emoji == current), None).count > 1:
+                users = [user async for user in current.users()]
+                for user in users[1:]:
+                    await message.remove_reaction(current, user)
     
     def saveMatch(self, ctx: commands.Context, match):
         serverId = str(ctx.guild.id)
@@ -83,6 +157,7 @@ class RainbowBot(commands.Bot):
         self.conn.commit()
 
     async def getMatchData(self, ctx: commands.Context):
+        """Gets the match data and discord message from the database. If there is no match in progress, it will return a message to the user. If there is a match in progress, it will return the match data and discord message."""
         serverId = str(ctx.guild.id)
         matchData, discordMessage = None, None
         result = self.cursor.execute("SELECT match_data, discord_message FROM matches WHERE server_id = ?", (serverId,)).fetchone()
@@ -90,9 +165,9 @@ class RainbowBot(commands.Bot):
         if result is not None:
             matchData, discordMessage = result
             matchData = json.loads(matchData) if matchData is not None else None
-            discordMessage = json.loads(discordMessage) if discordMessage is not None else self.resetDiscordMessage(ctx)
+            discordMessage = json.loads(discordMessage) if discordMessage is not None else self.resetDiscordMessage(ctx.guild.id)
         else:
-            discordMessage = self.resetDiscordMessage(ctx)
+            discordMessage = self.resetDiscordMessage(ctx.guild.id)
 
         if matchData is None:
             discordMessage['messageContent']['playersBanner'] = 'No match in progress. Use "**!startMatch @player1 @player2...**" to start a new match.'

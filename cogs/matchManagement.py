@@ -11,7 +11,7 @@ class MatchManagement(commands.Cog, name='Match Management'):
 
     @commands.command(aliases=['startMatch', 'start', 'play'], category='Rainbow Six')
     async def _startMatch(self, ctx: commands.Context, *playerNames):
-        """Starts a new match with up to five players. Use **!startMatch @player1 @player2...** to start a match with the mentioned players."""
+        """Starts a new match with up to five players. Use **!startMatch @player1 @player2...** to start a match with the mentioned players. This command must be used before in order for any other match commands to work."""
         serverId = str(ctx.guild.id)
         matchData = self.bot.cursor.execute("SELECT match_data FROM matches WHERE server_id = ?", (serverId,)).fetchone()
 
@@ -24,7 +24,7 @@ class MatchManagement(commands.Cog, name='Match Management'):
             return
 
         match = RainbowMatch()
-        discordMessage = self.bot.resetDiscordMessage(ctx)
+        discordMessage = self.bot.resetDiscordMessage(ctx.guild.id)
         self.bot.cursor.execute("INSERT INTO matches (server_id, discord_message) VALUES (?, ?)", (serverId, json.dumps(discordMessage)))
 
         if len(playerNames) > 5:
@@ -52,7 +52,8 @@ class MatchManagement(commands.Cog, name='Match Management'):
         discordMessage['messageContent']['banMetadata'] += f'Attack:    **{att1}** or if banned **{att2}**\n'
         discordMessage['messageContent']['banMetadata'] += f'Defense: **{def1}** or if banned **{def2}**\n'
 
-        discordMessage['messageContent']['actionPrompt'] = 'Next, use "**!setMap map**" and "**!ban op1 op2...**"'
+        discordMessage['messageContent']['actionPrompt'] = 'Next, use "**!setMap map**" and "**!ban op1 op2...**", or start the match with **!attack** ⚔️ or **!defense** 🛡️.'
+        discordMessage['reactions'] = ['⚔️', '🛡️']
 
         self.bot.saveMatch(ctx, match)
         await self.bot.sendMessage(ctx, discordMessage)
@@ -63,7 +64,8 @@ class MatchManagement(commands.Cog, name='Match Management'):
         match, discordMessage, canContinue = await self.bot.getMatchData(ctx)
         if not canContinue:
             return
-        await ctx.message.delete()
+        if ctx.message.id != discordMessage['matchMessageId'] or not discordMessage['matchMessageId']:
+            await ctx.message.delete()
 
         if len(playerNames) + len(match.players) > 5:
             discordMessage['messageContent']['playersBanner'] = f"A match can only have up to **five** players! **!removePlayers** first if you need to. Current players are {match.playersString}{', playing on **' + match.map + '**' if match.map else ''}.\n"
@@ -92,7 +94,8 @@ class MatchManagement(commands.Cog, name='Match Management'):
         match, discordMessage, canContinue = await self.bot.getMatchData(ctx)
         if not canContinue:
             return
-        await ctx.message.delete()
+        if ctx.message.id != discordMessage['matchMessageId'] or not discordMessage['matchMessageId']:
+            await ctx.message.delete()
 
         if len(playerNames) > 0:
             playerObjects = self._validatePlayerNames(ctx, playerNames)
@@ -124,11 +127,12 @@ class MatchManagement(commands.Cog, name='Match Management'):
             
         if not match.isMatchFinished():
             discordMessage['messageContent']['playersBanner'] = f"Stopped a match with {match.playersString}{' on **' + match.map + '**' if match.map else ''} before completing it.\n"
-            discordMessage['messageContent']['banMetadata'] = ''
-            discordMessage['messageContent']['matchScore'] = f"The score was **{match.scores['blue']}**:**{match.scores['red']}**{', we were playing on **' + match.playingOnSide + '**' if match.playingOnSide else ''}.\n"
-            discordMessage['messageContent']['roundMetadata'] = ''
-            discordMessage['messageContent']['roundLineup'] = ''
+        discordMessage['messageContent']['matchScore'] = f"The score was **{match.scores['blue']}**:**{match.scores['red']}**{', we were playing on **' + match.playingOnSide + '**' if match.playingOnSide else ''}.\n"
+        discordMessage['messageContent']['roundMetadata'] = ''
+        discordMessage['messageContent']['roundLineup'] = ''
+        discordMessage['messageContent']['banMetadata'] = ''
         discordMessage['messageContent']['actionPrompt'] = ''
+        discordMessage['reactions'] = []
         await self.bot.sendMessage(ctx, discordMessage, True)
             
         self.bot.cursor.execute("DELETE FROM matches WHERE server_id = ?", (str(ctx.guild.id),))
@@ -143,7 +147,8 @@ class MatchManagement(commands.Cog, name='Match Management'):
         match, discordMessage, canContinue = await self.bot.getMatchData(ctx)
         if not canContinue:
             return
-        await ctx.message.delete()
+        if ctx.message.id != discordMessage['matchMessageId'] or not discordMessage['matchMessageId']:
+            await ctx.message.delete()
 
         if not match.isMatchFinished():
             discordMessage['messageContent']['playersBanner'] = f"Stopped a match with {match.playersString}{' on **' + match.map + '**' if match.map else ''} before completing it.\n"
@@ -154,6 +159,7 @@ class MatchManagement(commands.Cog, name='Match Management'):
         discordMessage['messageContent']['roundLineup'] = ''
         discordMessage['messageContent']['banMetadata'] = ''
         discordMessage['messageContent']['actionPrompt'] = 'Ending the session here...\nUse **!startMatch** to start a new match.'
+        discordMessage['reactions'] = []
         await self.bot.sendMessage(ctx, discordMessage)
 
         self.bot.cursor.execute("DELETE FROM matches WHERE server_id = ?", (str(ctx.guild.id),))

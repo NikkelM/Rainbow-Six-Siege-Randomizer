@@ -5,8 +5,8 @@ from version import __version__ as VERSION
 
 class General(commands.Cog, name='General'):
     """Commands that allow you to manage the bot itself."""
-    def __init__(self, bot):
-        self.bot: RainbowBot = bot
+    def __init__(self, bot: RainbowBot):
+        self.bot = bot
         bot.help_command = CustomHelpCommand()
         bot.help_command.cog = self
 
