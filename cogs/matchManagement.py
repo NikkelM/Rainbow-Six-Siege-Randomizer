@@ -40,7 +40,7 @@ class MatchManagement(commands.Cog, name='Match Management'):
                 await self.bot.sendMessage(ctx, discordMessage)
                 return
             match.setPlayers(playerObjects)
-            discordMessage['messageContent']['playersBanner'] = f"Starting a new match with everyone in **{voiceChannel}** ({match.playersString}){' on **' + match.map + '**' if match.map else ''}.\n"
+            discordMessage['messageContent']['playersBanner'] = f"Starting a new match with everyone in **{voiceChannel}**: {match.playersString}{' on **' + match.map + '**' if match.map else ''}.\n"
 
         elif len(playerNamesOrVoiceCommand) > 5:
             discordMessage['messageContent']['playersBanner'] = 'You can only start a match with up to **five** players! Use "**!startMatch @player1 @player2...**" to try again.'
