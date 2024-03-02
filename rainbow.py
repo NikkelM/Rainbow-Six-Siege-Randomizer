@@ -11,8 +11,8 @@ class RainbowMatch:
             self.map = existingMatch['map']
             self.sites = existingMatch['sites']
             self.playingOnSide = existingMatch['playingOnSide']
-            self.currSite = existingMatch['currSite']
             self.currRound = existingMatch['currRound']
+            self.rounds = existingMatch['rounds']
             self.scores = existingMatch['scores']
             self.reshuffles = existingMatch['reshuffles']
             self.players = existingMatch['players']
@@ -23,11 +23,12 @@ class RainbowMatch:
             self.map = None
             self.sites = self._resetSites()
             self.playingOnSide = None
-            self.currSite = None
             self.currRound = 0
+            self.rounds = []
             self.scores = {"blue": 0, "red": 0}
             self.reshuffles = 0
             self.players = []
+            # TODO: Don't save this?
             self.playersString = ''
 
     def _getOperators(self):
@@ -180,16 +181,27 @@ class RainbowMatch:
 
         self.map = mapMapping[0]
         return True
+    
+    def setupRound(self):
+        """Starts a new round, returning the chosen operators and site."""
+        siteIndex, playedSite = self.getPlayedSite() if self.playingOnSide == "defense" else (None, None)
+        playedOperators = self.getPlayedOperators()
+        self.rounds.append({
+            "site": siteIndex,
+            "operators": playedOperators[:len(self.players)],
+            "result": None
+        })
+        return playedOperators, playedSite
 
     def getPlayedSite(self):
-        """Returns a choice of site that should be played, and removes the choice from the pool."""
-        self.currSite = random.choice(self.sites)
-        return self._getMap(self.map)[1][self.currSite]
+        """Returns a choice of site that should be played."""
+        siteIndex = random.choice(self.sites)
+        return siteIndex, self._getMap(self.map)[1][siteIndex]
 
-    def getPlayedOperators(self, side):
+    def getPlayedOperators(self):
         """Returns a random list of operators for the specified side, excluding any banned operators."""
         attackers, defenders = self._getOperators().values()
-        available_operators = [op for op in (attackers if side == "attack" else defenders) if op not in self.bannedOperators]
+        available_operators = [op for op in (attackers if self.playingOnSide == "attack" else defenders) if op not in self.bannedOperators]
         return random.sample(available_operators, k=min(5, len(available_operators)))
 
     def resolveRound(self, result, overtimeSide):
@@ -197,7 +209,7 @@ class RainbowMatch:
         if result == "won":
             self.scores["blue"] += 1
             if self.playingOnSide == "defense":
-                self.sites.remove(self.currSite)
+                self.sites.remove(self.rounds[-1]["site"])
         else:
             self.scores["red"] += 1
 
