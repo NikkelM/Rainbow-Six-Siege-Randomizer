@@ -28,7 +28,6 @@ class RainbowMatch:
             self.scores = {"blue": 0, "red": 0}
             self.reshuffles = 0
             self.players = []
-            # TODO: Don't save this?
             self.playersString = ''
 
     def _getOperators(self):
