@@ -225,7 +225,7 @@ class OngoingMatch(commands.Cog, name='Ongoing Match'):
             discordMessage['messageContent']['roundLineup'] += f'Backup operators: **{", ".join(operators)}**\n'
 
         discordMessage['messageContent']['actionPrompt'] = ''
-        discordMessage['reactions'] = []
+        discordMessage['reactions'] = [] 
 
         if match.reshuffles < 2:
             discordMessage['messageContent']['actionPrompt'] += f'Use **!reshuffle** 🔁 to get new choices (**{2 - match.reshuffles}** remaining).\n'
@@ -240,6 +240,10 @@ class OngoingMatch(commands.Cog, name='Ongoing Match'):
         elif match.scores["blue"] == 3:
             discordMessage['messageContent']['actionPrompt'] += 'If you lost, use "**!lost attack**" ⚔️ (or "**!lost defense**" 🛡️) to start overtime on the specified side, otherwise use **!won** 🇼 to end the match.'
             discordMessage['reactions'] += ['🇼', '⚔️', '🛡️']
+
+        # If one of the operators is Caveira, add the interrogation emoji to the message
+        if 'Caveira' in operators_copy:
+            discordMessage['reactions'] += ['🗡️']
 
         self.bot.saveOngoingMatch(ctx, match)
         await self.bot.sendMessage(ctx, discordMessage)

@@ -47,6 +47,7 @@ class RainbowBot(commands.Bot):
             CREATE TABLE IF NOT EXISTS player_matches (
                 player_id INTEGER,
                 match_id TEXT,
+                PRIMARY KEY(player_id, match_id),
                 FOREIGN KEY(player_id) REFERENCES players(player_id),
                 FOREIGN KEY(match_id) REFERENCES matches(match_id)
             )
@@ -59,6 +60,7 @@ class RainbowBot(commands.Bot):
                 round_num INTEGER,
                 site INTEGER,
                 result INTEGER,
+                PRIMARY KEY(match_id, round_num),
                 FOREIGN KEY(match_id) REFERENCES matches(match_id)
             )
         """)
@@ -70,6 +72,7 @@ class RainbowBot(commands.Bot):
                 match_id TEXT,
                 round_num INTEGER,
                 operator INTEGER,
+                PRIMARY KEY(player_id, match_id, round_num),
                 FOREIGN KEY(match_id) REFERENCES matches(match_id),
                 FOREIGN KEY(player_id) REFERENCES players(player_id)
             )
@@ -81,6 +84,7 @@ class RainbowBot(commands.Bot):
                 player_id INTEGER,
                 stat_type INTEGER,
                 value INTEGER,
+                PRIMARY KEY(player_id, stat_type),
                 FOREIGN KEY(player_id) REFERENCES players(player_id)
             )
         """)
@@ -116,6 +120,7 @@ class RainbowBot(commands.Bot):
             return
 
         await reaction.message.remove_reaction(reaction, user)
+
         if reaction.emoji == '🇼':
             await self.get_cog('Ongoing Match')._won(ctx)
         elif reaction.emoji == '🇱':
@@ -146,6 +151,9 @@ class RainbowBot(commands.Bot):
             await self.get_cog('Match Management')._another(ctx, 'here')
         elif reaction.emoji == '👎':
             await self.get_cog('Match Management')._goodnight(ctx)
+        elif reaction.emoji == '🗡️':
+            match.addPlayerStat(user.id, 'caveiraInterrogation')
+            self.saveOngoingMatch(ctx, match)
         else:
             print('Unknown reaction:', reaction.emoji)
             return
@@ -239,6 +247,16 @@ class RainbowBot(commands.Bot):
                 operator = round['operators'][playerIndex]
                 self.cursor.execute("INSERT INTO player_rounds (player_id, match_id, round_num, operator) VALUES (?, ?, ?, ?)", (playerId, matchId, roundNumber, operator))
                 self.conn.commit()
+
+        for stat in match.playerStats:
+            playerId = stat['playerId']
+            statType = stat['statType']
+            # Increase the counter of this stat by one, or create it if it doesn't exist.
+            self.cursor.execute("""
+                INSERT OR REPLACE INTO player_additional_stats (player_id, stat_type, value)
+                VALUES (?, ?, COALESCE((SELECT value FROM player_additional_stats WHERE player_id = ? AND stat_type = ?), 0) + 1)
+            """, (playerId, statType, playerId, statType))
+            self.conn.commit()
 
     def saveDiscordMessage(self, ctx: commands.Context, discordMessage):
         serverId = ctx.guild.id

@@ -17,6 +17,7 @@ class RainbowMatch:
             self.reshuffles = existingMatch['reshuffles']
             self.players = existingMatch['players']
             self.playersString = existingMatch['playersString']
+            self.playerStats = existingMatch['playerStats']
         else:
             self.matchId = str(uuid.uuid4())
             self.bannedOperators = []
@@ -29,6 +30,7 @@ class RainbowMatch:
             self.reshuffles = 0
             self.players = []
             self.playersString = ''
+            self.playerStats = []
 
     def _getOperators(self):
         """Returns a dictionary with the list of attacker and defender operators."""
@@ -240,3 +242,23 @@ class RainbowMatch:
         if self.scores["blue"] == 5 or self.scores["red"] == 5:
             return True
         return False
+
+    def getStatMapping(self, statType):
+        """Returns the ID for a statistic type, or the type for a statistic ID."""
+        # A mapping of statistic names to their corresponding ID, explicitly defined to avoid issues with future changes
+        statTypeToIdMapping = {
+            'caveiraInterrogation': 0,
+            'Ace': 1,
+        }
+        statIdToTypeMapping = {v: k for k, v in statTypeToIdMapping.items()}
+
+        if statType in statTypeToIdMapping.keys():
+            return statTypeToIdMapping[statType]
+        return statIdToTypeMapping[statType]
+
+    def addPlayerStat(self, playerId, statType):
+        """Adds a player stat to the list of player stats for this match."""
+        self.playerStats.append({
+            "playerId": playerId,
+            "statType": self.getStatMapping(statType)
+        })
