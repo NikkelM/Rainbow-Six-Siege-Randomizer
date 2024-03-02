@@ -112,7 +112,7 @@ class RainbowBot(commands.Bot):
     async def on_reaction_add(self, reaction: discord.Reaction, user: discord.User):
         """Handles reactions being added to messages."""
         ctx: commands.Context = await self.get_context(reaction.message)
-        match, discordMessage, canContinue = await self.getMatchData(ctx)
+        match, discordMessage, canContinue = await self.getMatchData(ctx, False)
 
         if discordMessage is None or discordMessage['matchMessageId'] != reaction.message.id or user == bot.user:
             return     
@@ -269,7 +269,7 @@ class RainbowBot(commands.Bot):
         self.cursor.execute("UPDATE ongoing_matches SET discord_message = ? WHERE server_id = ?", (discordMessage, serverId))
         self.conn.commit()
 
-    async def getMatchData(self, ctx: commands.Context):
+    async def getMatchData(self, ctx: commands.Context, shouldAlertOnNoMatch=True):
         """Gets the match data and discord message from the database. If there is no match in progress, it will return a message to the user. If there is a match in progress, it will return the match data and discord message."""
         serverId = ctx.guild.id
         matchData, discordMessage = None, None
@@ -282,7 +282,7 @@ class RainbowBot(commands.Bot):
         else:
             discordMessage = self.resetDiscordMessage(ctx.guild.id)
 
-        if matchData is None:
+        if matchData is None and shouldAlertOnNoMatch:
             discordMessage['messageContent']['playersBanner'] = 'No match in progress. Use "**!startMatch @player1 @player2...**" to start a new match.'
             await bot.sendMessage(ctx, discordMessage, True)
             return None, None, False
