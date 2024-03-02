@@ -40,7 +40,7 @@ class OngoingMatch(commands.Cog, name='Ongoing Match'):
 
         if match.currRound == 0:
             if not match.bannedOperators:
-                discordMessage['messageContent']['actionPrompt'] += 'Use "**!ban op1 op2...**" or use "**!attack**" ⚔️ or "**!defense**" 🛡️ to start the match.'
+                discordMessage['messageContent']['actionPrompt'] += 'Use "**!ban op1 op2...**", then "**!attack**" ⚔️ or "**!defense**" 🛡️ to start the match.'
             else:
                 discordMessage['messageContent']['actionPrompt'] += 'Use "**!attack**" ⚔️ or "**!defense**" 🛡️ to start the match.'
         else:
