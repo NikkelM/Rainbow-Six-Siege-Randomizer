@@ -10,8 +10,8 @@ class MatchManagement(commands.Cog, name='Match Management'):
         self.bot: RainbowBot = bot
 
     @commands.command(aliases=['startMatch', 'start', 'play'], category='Rainbow Six')
-    async def _startMatch(self, ctx: commands.Context, *playerNames):
-        """Starts a new match with up to five players. Use **!startMatch @player1 @player2...** to start a match with the mentioned players. This command must be used before in order for any other match commands to work."""
+    async def _startMatch(self, ctx: commands.Context, *playerNamesOrVoiceCommand):
+        """Starts a new match with up to five players. Use **!startMatch voice** to start a match with everyone in your current voice channel, or **!startMatch @player1 @player2...** to start a match with the mentioned players. This command must be used before in order for any other match commands to work."""
         serverId = str(ctx.guild.id)
         matchData = self.bot.cursor.execute("SELECT match_data FROM matches WHERE server_id = ?", (serverId,)).fetchone()
 
@@ -28,7 +28,7 @@ class MatchManagement(commands.Cog, name='Match Management'):
         self.bot.cursor.execute("INSERT INTO matches (server_id, discord_message) VALUES (?, ?)", (serverId, json.dumps(discordMessage)))
 
         # Instead of a player name, the user can use the argument "voice" to start a match with the players in their voice channel
-        if len(playerNames) == 1 and playerNames[0].lower() in ['voice', 'voicechannel', 'channel', 'here']:
+        if len(playerNamesOrVoiceCommand) == 1 and playerNamesOrVoiceCommand[0].lower() in ['voice', 'voicechannel', 'channel', 'here']:
             voiceChannel = ctx.author.voice.channel if ctx.author.voice else None
             if voiceChannel is None:
                 discordMessage['messageContent']['playersBanner'] = 'You must be in a voice channel to use this command argument. You can always start a match using "**!startMatch @player1 @player2...**".'
@@ -42,12 +42,12 @@ class MatchManagement(commands.Cog, name='Match Management'):
             match.setPlayers(playerObjects)
             discordMessage['messageContent']['playersBanner'] = f"Starting a new match with everyone in **{voiceChannel}** ({match.playersString}){' on **' + match.map + '**' if match.map else ''}.\n"
 
-        elif len(playerNames) > 5:
+        elif len(playerNamesOrVoiceCommand) > 5:
             discordMessage['messageContent']['playersBanner'] = 'You can only start a match with up to **five** players! Use "**!startMatch @player1 @player2...**" to try again.'
             await self.bot.sendMessage(ctx, discordMessage)
             return
-        elif len(playerNames) > 0:
-            playerObjects = self._validatePlayerNames(ctx, playerNames)
+        elif len(playerNamesOrVoiceCommand) > 0:
+            playerObjects = self._validatePlayerNames(ctx, playerNamesOrVoiceCommand)
             if len(playerObjects) > 0:
                 match.setPlayers(playerObjects)
                 discordMessage['messageContent']['playersBanner'] = f"Starting a new match with {match.playersString}{' on **' + match.map + '**' if match.map else ''}.\n"
@@ -73,7 +73,7 @@ class MatchManagement(commands.Cog, name='Match Management'):
         self.bot.saveMatch(ctx, match)
         await self.bot.sendMessage(ctx, discordMessage)
 
-    @commands.command(aliases=['addPlayers', 'addPlayer'])
+    @commands.command(aliases=['addPlayers', 'addPlayer', 'add'])
     async def _addPlayers(self, ctx: commands.Context, *playerNames):
         """Adds additional players to the match. Use **!addPlayers @player1 @player2...** to add the mentioned players to the match. The total number of players cannot exceed five, use **!removePlayers** first if you need to."""
         match, discordMessage, canContinue = await self.bot.getMatchData(ctx)
@@ -103,7 +103,7 @@ class MatchManagement(commands.Cog, name='Match Management'):
         self.bot.saveMatch(ctx, match)
         await self.bot.sendMessage(ctx, discordMessage)
 
-    @commands.command(aliases=['removePlayers', 'removePlayer'])
+    @commands.command(aliases=['removePlayers', 'removePlayer', 'remove'])
     async def _removePlayers(self, ctx: commands.Context, *playerNames):
         """Removes players from the match. Use **!removePlayers @player1 @player2...** to remove the mentioned players from the match. At least one player must remain in the match."""
         match, discordMessage, canContinue = await self.bot.getMatchData(ctx)
