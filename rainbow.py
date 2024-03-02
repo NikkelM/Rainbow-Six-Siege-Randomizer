@@ -241,22 +241,11 @@ class RainbowMatch:
             return True
         return False
 
-    def getStatMapping(self, statType):
-        """Returns the ID for a statistic type, or the type for a statistic ID."""
-        # A mapping of statistic names to their corresponding ID, explicitly defined to avoid issues with future changes
-        statTypeToIdMapping = {
-            'caveiraInterrogation': 0,
-            'Ace': 1,
-        }
-        statIdToTypeMapping = {v: k for k, v in statTypeToIdMapping.items()}
-
-        if statType in statTypeToIdMapping.keys():
-            return statTypeToIdMapping[statType]
-        return statIdToTypeMapping[statType]
-
     def addPlayerStat(self, playerId, statType):
         """Adds a player stat to the list of player stats for this match."""
-        self.playerStats.append({
-            "playerId": playerId,
-            "statType": self.getStatMapping(statType)
-        })
+        statTypes = ['interrogation', 'ace']
+        if statType in statTypes:
+            self.playerStats.append({
+                "playerId": playerId,
+                "statType": statType
+            })
