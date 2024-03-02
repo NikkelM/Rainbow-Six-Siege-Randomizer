@@ -184,6 +184,7 @@ class OngoingMatch(commands.Cog, name='Ongoing Match'):
         discordMessage['messageContent']['playersBanner'] = f"Playing a match with {match.playersString}{' on **' + match.map + '**' if match.map else ''}.\n"
         discordMessage['messageContent']['matchScore'] = f'The score is **{match.scores["blue"]}**:**{match.scores["red"]}**, we are playing on **{match.playingOnSide}**.\n'
         discordMessage['messageContent']['banMetadata'] = ''
+        discordMessage['messageContent']['statsBanner'] = ''
         discordMessage['messageContent']['roundMetadata'] = f'Here is your lineup for round {match.currRound}:'
 
         operators, site = match.setupRound()
@@ -213,7 +214,6 @@ class OngoingMatch(commands.Cog, name='Ongoing Match'):
             discordMessage['reactions'] += ['🇼', '⚔️', '🛡️']
 
         # If one of the operators is Caveira, add the interrogation emoji to the message
-        # TODO: Add a command for this. The command must check if Caveira is in the lineup. Allow an argument for the number of interrogationsin the round.
         if 'Caveira' in operators_copy:
             discordMessage['reactions'] += ['🗡️']
 
@@ -229,6 +229,8 @@ class OngoingMatch(commands.Cog, name='Ongoing Match'):
         discordMessage['messageContent']['roundLineup'] = ''
         discordMessage['messageContent']['playersBanner'] = f"Finished a match with {match.playersString}{' on **' + match.map + '**' if match.map else ''}.\n"
         discordMessage['messageContent']['matchScore'] = f'The match is over! The final score was **{match.scores["blue"]}**:**{match.scores["red"]}**.'
+        # TODO: Add a list of tracked stats for the current match
+        discordMessage['messageContent']['statsBanner'] = ''
         discordMessage['messageContent']['actionPrompt'] = 'Use "**!another**" 👍 to start a new match with the same players, "**!another here**" 🎤 to start a match with everyone in your voice channel, or "**!goodnight**" 👎 to end the session.'
         discordMessage['reactions'] = ['👍', '🎤', '👎']
         self.bot.saveOngoingMatch(ctx, match)

@@ -103,6 +103,7 @@ class RainbowBot(commands.Bot):
             'general',
             'matchManagement',
             'ongoingMatch',
+            'matchStatistics'
         ]
         for cog in cogs_list:
             await bot.load_extension(f'cogs.{cog}')
@@ -172,6 +173,7 @@ class RainbowBot(commands.Bot):
                 'banMetadata': '',
                 'roundMetadata': '',
                 'roundLineup': '',
+                'statsBanner': '',
                 'actionPrompt': ''
             },
             'reactions': []

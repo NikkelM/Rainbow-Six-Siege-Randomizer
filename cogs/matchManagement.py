@@ -148,6 +148,7 @@ class MatchManagement(commands.Cog, name='Match Management'):
         discordMessage['messageContent']['roundMetadata'] = ''
         discordMessage['messageContent']['roundLineup'] = ''
         discordMessage['messageContent']['banMetadata'] = ''
+        discordMessage['messageContent']['statsBanner'] = ''
         discordMessage['messageContent']['actionPrompt'] = ''
         discordMessage['reactions'] = []
         await self.bot.sendMessage(ctx, discordMessage, True)
@@ -179,6 +180,7 @@ class MatchManagement(commands.Cog, name='Match Management'):
         discordMessage['messageContent']['roundMetadata'] = ''
         discordMessage['messageContent']['roundLineup'] = ''
         discordMessage['messageContent']['banMetadata'] = ''
+        discordMessage['messageContent']['statsBanner'] = ''
         discordMessage['messageContent']['actionPrompt'] = 'Use **!startMatch** to start a new match.'
         discordMessage['reactions'] = []
         await self.bot.sendMessage(ctx, discordMessage)
