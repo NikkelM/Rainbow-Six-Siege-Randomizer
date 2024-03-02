@@ -31,7 +31,6 @@ Commands to interact with an ongoing match, such as banning operators or playing
 | `!defense`, `!startDefense`, `!defend`, 🛡️ | | Starts the match on defense. |
 | `!won`, `!w` | `attack` ⚔️ or `defense` 🛡️, if winning starts overtime | Marks the current round as won and starts a new round. If winning starts overtime, you must specify the side you start overtime on with **!won attack** ⚔️ or **!won defense** 🛡️. |
 | `!lost`, `!l` | `attack` ⚔️ or `defense` 🛡️, if losing starts overtime | Marks the current round as lost and starts a new round. If losing starts overtime, you must specify the side you start overtime on with **!lost attack** ⚔️ or **!lost defense** 🛡️. |
-| `!reshuffle`, `!shuffle`, 🔁 | | Reshuffles the operator choices and site (if playing on defense) for the current round. You can reshuffle up to twice per match. |
 
 ### General
 

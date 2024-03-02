@@ -44,8 +44,6 @@ class OngoingMatch(commands.Cog, name='Ongoing Match'):
             else:
                 discordMessage['messageContent']['actionPrompt'] += 'Use "**!attack**" ⚔️ or "**!defense**" 🛡️ to start the match.'
         else:
-            if match.reshuffles < 2:
-                discordMessage['messageContent']['actionPrompt'] += f'Use **!reshuffle** 🔁 to get new choices (**{2 - match.reshuffles}** remaining).\n'
             discordMessage['messageContent']['actionPrompt'] += 'Use "**!won**" 🇼 or "**!lost**" 🇱 to continue.'
 
         self.bot.saveOngoingMatch(ctx, match)
@@ -118,29 +116,6 @@ class OngoingMatch(commands.Cog, name='Ongoing Match'):
             self.bot.saveOngoingMatch(ctx, match)
             self.bot.saveDiscordMessage(ctx, discordMessage)
             await self._endMatch(ctx)
-
-    @commands.command(aliases=['reshuffle', 'shuffle'])
-    async def _reshuffle(self, ctx: commands.Context):
-        """Reshuffles the operator choices and site (if playing on defense) for the current round. You can reshuffle up to twice per match."""
-        match, discordMessage, canContinue = await self.bot.getMatchData(ctx)
-        if not canContinue:
-            return
-        if ctx.message.id != discordMessage['matchMessageId'] or not discordMessage['matchMessageId']:
-            await ctx.message.delete()
-
-        if match.reshuffles >= 2:
-            discordMessage['messageContent']['actionPrompt'] = 'You cannot reshuffle more than twice per match. Next time, choose more carefully!\nUse **!won** 🇼 or **!lost** 🇱 to continue.'
-            await self.bot.sendMessage(ctx, discordMessage)
-            return
-
-        if match.currRound == 0:
-            discordMessage['messageContent']['actionPrompt'] = 'You can only reshuffle the lineup after the first round has started.\nUse **!attack** ⚔️ or **!defense** 🛡️ to start the first round.'
-            await self.bot.sendMessage(ctx, discordMessage)
-            return
-
-        match.reshuffles += 1
-        self.bot.saveOngoingMatch(ctx, match)
-        await self._playRound(ctx)
 
     async def _banUnban(self, ctx: commands.Context, *operators, ban=True):
         match, discordMessage, canContinue = await self.bot.getMatchData(ctx)
@@ -227,10 +202,6 @@ class OngoingMatch(commands.Cog, name='Ongoing Match'):
         discordMessage['messageContent']['actionPrompt'] = ''
         discordMessage['reactions'] = [] 
 
-        if match.reshuffles < 2:
-            discordMessage['messageContent']['actionPrompt'] += f'Use **!reshuffle** 🔁 to get new choices (**{2 - match.reshuffles}** remaining).\n'
-            discordMessage['reactions'] += ['🔁']
-
         if match.currRound != 6:
             discordMessage['messageContent']['actionPrompt'] += 'Use "**!won**" 🇼 or "**!lost**" 🇱 to continue.'
             discordMessage['reactions'] += ['🇼', '🇱']
@@ -242,6 +213,7 @@ class OngoingMatch(commands.Cog, name='Ongoing Match'):
             discordMessage['reactions'] += ['🇼', '⚔️', '🛡️']
 
         # If one of the operators is Caveira, add the interrogation emoji to the message
+        # TODO: Add a command for this. The command must check if Caveira is in the lineup. Allow an argument for the number of interrogationsin the round.
         if 'Caveira' in operators_copy:
             discordMessage['reactions'] += ['🗡️']
 

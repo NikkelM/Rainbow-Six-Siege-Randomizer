@@ -14,7 +14,6 @@ class RainbowMatch:
             self.currRound = existingMatch['currRound']
             self.rounds = existingMatch['rounds']
             self.scores = existingMatch['scores']
-            self.reshuffles = existingMatch['reshuffles']
             self.players = existingMatch['players']
             self.playersString = existingMatch['playersString']
             self.playerStats = existingMatch['playerStats']
@@ -27,7 +26,6 @@ class RainbowMatch:
             self.currRound = 0
             self.rounds = []
             self.scores = {"blue": 0, "red": 0}
-            self.reshuffles = 0
             self.players = []
             self.playersString = ''
             self.playerStats = []

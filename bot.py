@@ -121,11 +121,12 @@ class RainbowBot(commands.Bot):
 
         await reaction.message.remove_reaction(reaction, user)
 
-        if reaction.emoji == '🇼':
+        # During a match
+        if reaction.emoji == '🇼': # Round was won
             await self.get_cog('Ongoing Match')._won(ctx)
-        elif reaction.emoji == '🇱':
+        elif reaction.emoji == '🇱': # Round was lost
             await self.get_cog('Ongoing Match')._lost(ctx)
-        elif reaction.emoji == '⚔️':
+        elif reaction.emoji == '⚔️': # Starting (overtime) on attack
             if match.currRound == 0:
                 await self.get_cog('Ongoing Match')._startAttack(ctx)
             elif (match.currRound == 6 and match.scores["red"] == 3):
@@ -134,7 +135,7 @@ class RainbowBot(commands.Bot):
                 await self.get_cog('Ongoing Match')._lost(ctx, 'attack')
             else:
                 print('Unknown reaction/match state combination: ⚔️', match.currRound, match.scores)
-        elif reaction.emoji == '🛡️':
+        elif reaction.emoji == '🛡️': # Starting (overtime) on defense
             if match.currRound == 0:
                 await self.get_cog('Ongoing Match')._startDefense(ctx)
             elif (match.currRound == 6 and match.scores["red"] == 3):
@@ -143,15 +144,17 @@ class RainbowBot(commands.Bot):
                 await self.get_cog('Ongoing Match')._lost(ctx, 'defense')
             else:
                 print('Unknown reaction/match state combination: 🛡️', match.currRound, match.scores)
-        elif reaction.emoji == '🔁':
-            await self.get_cog('Ongoing Match')._reshuffle(ctx)
-        elif reaction.emoji == '👍':
+
+        # End of match
+        elif reaction.emoji == '👍': # Play another match with the same players
             await self.get_cog('Match Management')._another(ctx)
-        elif reaction.emoji == '🎤':
+        elif reaction.emoji == '🎤': # Play another match with players in the current voice channel
             await self.get_cog('Match Management')._another(ctx, 'here')
-        elif reaction.emoji == '👎':
+        elif reaction.emoji == '👎': # End the session
             await self.get_cog('Match Management')._goodnight(ctx)
-        elif reaction.emoji == '🗡️':
+
+        # Statistics
+        elif reaction.emoji == '🗡️': # Player got an interrogation
             match.addPlayerStat(user.id, 'caveiraInterrogation')
             self.saveOngoingMatch(ctx, match)
         else:
