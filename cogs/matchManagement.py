@@ -179,7 +179,7 @@ class MatchManagement(commands.Cog, name='Match Management'):
         discordMessage['messageContent']['roundMetadata'] = ''
         discordMessage['messageContent']['roundLineup'] = ''
         discordMessage['messageContent']['banMetadata'] = ''
-        discordMessage['messageContent']['actionPrompt'] = 'Ending the session here...\nUse **!startMatch** to start a new match.'
+        discordMessage['messageContent']['actionPrompt'] = 'Use **!startMatch** to start a new match.'
         discordMessage['reactions'] = []
         await self.bot.sendMessage(ctx, discordMessage)
 

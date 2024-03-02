@@ -38,14 +38,14 @@ class RainbowBot(commands.Bot):
         # Players that have ever played in a match
         self.cursor.execute("""
             CREATE TABLE IF NOT EXISTS players (
-                player_id TEXT PRIMARY KEY
+                player_id INTEGER PRIMARY KEY
             )
         """)
 
         # Matches a certain player has played
         self.cursor.execute("""
             CREATE TABLE IF NOT EXISTS player_matches (
-                player_id TEXT,
+                player_id INTEGER,
                 match_id TEXT,
                 FOREIGN KEY(player_id) REFERENCES players(player_id),
                 FOREIGN KEY(match_id) REFERENCES matches(match_id)
@@ -66,11 +66,21 @@ class RainbowBot(commands.Bot):
         # Operators played by a player in each round
         self.cursor.execute("""
             CREATE TABLE IF NOT EXISTS player_rounds (
-                player_id TEXT,
+                player_id INTEGER,
                 match_id TEXT,
                 round_num INTEGER,
                 operator INTEGER,
                 FOREIGN KEY(match_id) REFERENCES matches(match_id),
+                FOREIGN KEY(player_id) REFERENCES players(player_id)
+            )
+        """)
+
+        # Additional player statistics, such as Caveira interrogations, Aces etc.
+        self.cursor.execute("""
+            CREATE TABLE IF NOT EXISTS player_additional_stats (
+                player_id INTEGER,
+                stat_type INTEGER,
+                value INTEGER,
                 FOREIGN KEY(player_id) REFERENCES players(player_id)
             )
         """)
