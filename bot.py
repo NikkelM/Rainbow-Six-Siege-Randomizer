@@ -150,6 +150,8 @@ class RainbowBot(commands.Bot):
         elif reaction.emoji == '👍': # Play another match with the same players
             await self.get_cog('Match Management')._another(ctx)
         elif reaction.emoji == '🎤': # Play another match with players in the current voice channel
+            member = reaction.message.guild.get_member(user.id)
+            ctx.author = member if member.voice else ctx.author
             await self.get_cog('Match Management')._another(ctx, 'here')
         elif reaction.emoji == '👎': # End the session
             await self.get_cog('Match Management')._goodnight(ctx)
@@ -270,7 +272,7 @@ class RainbowBot(commands.Bot):
         self.conn.commit()
 
     async def getMatchData(self, ctx: commands.Context, shouldAlertOnNoMatch=True):
-        """Gets the match data and discord message from the database. If there is no match in progress, it will return a message to the user. If there is a match in progress, it will return the match data and discord message."""
+        """Gets the match data and discord message from the database. If there is no match in progress, it will send a message to the user."""
         serverId = ctx.guild.id
         matchData, discordMessage = None, None
         result = self.cursor.execute("SELECT match_data, discord_message FROM ongoing_matches WHERE server_id = ?", (serverId,)).fetchone()
