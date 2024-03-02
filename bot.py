@@ -80,6 +80,8 @@ class RainbowBot(commands.Bot):
         elif reaction.emoji == '👍':
             await self.get_cog('Match Management')._another(ctx)
         elif reaction.emoji == '🎤':
+            member = reaction.message.guild.get_member(user.id)
+            ctx.author = member if member.voice else ctx.author
             await self.get_cog('Match Management')._another(ctx, 'here')
         elif reaction.emoji == '👎':
             await self.get_cog('Match Management')._goodnight(ctx)
