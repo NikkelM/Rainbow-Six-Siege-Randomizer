@@ -31,7 +31,8 @@ class RainbowBot(commands.Bot):
                 match_id TEXT PRIMARY KEY,
                 server_id INTEGER,
                 map TEXT,
-                match_result TEXT
+                blue_score INTEGER,
+                red_score INTEGER
             )
         """)
 
@@ -198,11 +199,41 @@ class RainbowBot(commands.Bot):
                 for user in users[1:]:
                     await message.remove_reaction(current, user)
     
-    def saveMatch(self, ctx: commands.Context, match):
+    def saveOngoingMatch(self, ctx: commands.Context, match):
         serverId = ctx.guild.id
         matchData = json.dumps(match.__dict__)
         self.cursor.execute("UPDATE ongoing_matches SET match_data = ? WHERE server_id = ?", (matchData, serverId))
         self.conn.commit()
+
+    def saveCompletedMatch(self, ctx: commands.Context, match: RainbowMatch):
+        matchId = match.matchId
+        serverId = ctx.guild.id
+        matchMap = match.map
+        blueScore = match.scores['blue']
+        redScore = match.scores['red']
+
+        self.cursor.execute("INSERT INTO matches (match_id, server_id, map, blue_score, red_score) VALUES (?, ?, ?, ?, ?)", (matchId, serverId, matchMap, blueScore, redScore))
+        self.conn.commit()
+
+        for player in match.players:
+            self.cursor.execute("INSERT OR IGNORE INTO players (player_id) VALUES (?)", (player['id'],))
+            self.cursor.execute("INSERT INTO player_matches (player_id, match_id) VALUES (?, ?)", (player['id'], matchId))
+            self.conn.commit()
+        
+        # for round in match.rounds:
+        #     roundId = round['roundId']
+        #     siteIndex = round['siteIndex']
+        #     roundResult = round['roundResult']
+        #     self.cursor.execute("INSERT INTO rounds (round_id, match_id, site_index, round_result) VALUES (?, ?, ?, ?)", (roundId, matchId, siteIndex, roundResult))
+        #     self.conn.commit()
+
+        #     for player in round['players']:
+        #         playerId = player['id']
+        #         operator = player['operator']
+        #         site = player['site']
+        #         self.cursor.execute("INSERT OR IGNORE INTO players (player_id) VALUES (?)", (playerId,))
+        #         self.cursor.execute("INSERT INTO player_rounds (player_id, round_id, operator, site) VALUES (?, ?, ?, ?)", (playerId, roundId, operator, site))
+        #         self.conn.commit()
 
     def saveDiscordMessage(self, ctx: commands.Context, discordMessage):
         serverId = ctx.guild.id

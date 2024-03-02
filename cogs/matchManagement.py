@@ -19,7 +19,7 @@ class MatchManagement(commands.Cog, name='Match Management'):
             await ctx.message.delete()
             discordMessage = self.bot.cursor.execute("SELECT discord_message FROM ongoing_matches WHERE server_id = ?", (serverId,)).fetchone()[0]
             discordMessage = json.loads(discordMessage)
-            discordMessage['messageContent']['actionPrompt'] = 'A match is already in progress. Use **!another** to start a new match with the same players, **!another here** to start a match with everyone in your voice channel, or **!goodnight** to end the session.'
+            discordMessage['messageContent']['actionPrompt'] = 'A match is already in progress. Use "**!another**" to start a new match with the same players, "**!another here**" to start a match with everyone in your voice channel, or "**!goodnight**" to end the session.'
             await self.bot.sendMessage(ctx, discordMessage)
             return
 
@@ -70,7 +70,7 @@ class MatchManagement(commands.Cog, name='Match Management'):
         discordMessage['messageContent']['actionPrompt'] = 'Next, use "**!setMap map**" and "**!ban op1 op2...**", or start the match with **!attack** ⚔️ or **!defense** 🛡️.'
         discordMessage['reactions'] = ['⚔️', '🛡️']
 
-        self.bot.saveMatch(ctx, match)
+        self.bot.saveOngoingMatch(ctx, match)
         await self.bot.sendMessage(ctx, discordMessage)
 
     @commands.command(aliases=['addPlayers', 'addPlayer', 'add'])
@@ -100,7 +100,7 @@ class MatchManagement(commands.Cog, name='Match Management'):
             await self.bot.sendMessage(ctx, discordMessage)
             return
 
-        self.bot.saveMatch(ctx, match)
+        self.bot.saveOngoingMatch(ctx, match)
         await self.bot.sendMessage(ctx, discordMessage)
 
     @commands.command(aliases=['removePlayers', 'removePlayer', 'remove'])
@@ -130,7 +130,7 @@ class MatchManagement(commands.Cog, name='Match Management'):
             await self.bot.sendMessage(ctx, discordMessage)
             return
 
-        self.bot.saveMatch(ctx, match)
+        self.bot.saveOngoingMatch(ctx, match)
         await self.bot.sendMessage(ctx, discordMessage)
 
     @commands.command(aliases=['another', 'again'])
@@ -139,7 +139,7 @@ class MatchManagement(commands.Cog, name='Match Management'):
         match, discordMessage, canContinue = await self.bot.getMatchData(ctx)
         if not canContinue:
             return
-            
+
         if not match.isMatchFinished():
             discordMessage['messageContent']['playersBanner'] = f"Stopped a match with {match.playersString}{' on **' + match.map + '**' if match.map else ''} before completing it.\n"
         discordMessage['messageContent']['matchScore'] = f"The score was **{match.scores['blue']}**:**{match.scores['red']}**{', we were playing on **' + match.playingOnSide + '**' if match.playingOnSide else ''}.\n"
@@ -149,10 +149,10 @@ class MatchManagement(commands.Cog, name='Match Management'):
         discordMessage['messageContent']['actionPrompt'] = ''
         discordMessage['reactions'] = []
         await self.bot.sendMessage(ctx, discordMessage, True)
-            
+
         self.bot.cursor.execute("DELETE FROM ongoing_matches WHERE server_id = ?", (ctx.guild.id,))
         self.bot.conn.commit()
-        
+
         playerIdStrings = [f'<@{player["id"]}>' for player in match.players]
         if here is not None and here.lower() in ['voice', 'voicechannel', 'channel', 'here']:
             playerIdStrings = ['here']
