@@ -39,7 +39,7 @@ class RainbowBot(commands.Bot):
         ]
         for cog in cogs_list:
             await bot.load_extension(f'cogs.{cog}')
-        await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.playing, name='!startMatch voice | !help'))
+        await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.playing, name='!startMatch here | !help'))
 
     async def on_reaction_add(self, reaction: discord.Reaction, user: discord.User):
         """Handles reactions being added to messages."""
@@ -79,6 +79,8 @@ class RainbowBot(commands.Bot):
             await self.get_cog('Ongoing Match')._reshuffle(ctx)
         elif reaction.emoji == '👍':
             await self.get_cog('Match Management')._another(ctx)
+        elif reaction.emoji == '🎤':
+            await self.get_cog('Match Management')._another(ctx, 'here')
         elif reaction.emoji == '👎':
             await self.get_cog('Match Management')._goodnight(ctx)
         else:
