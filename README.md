@@ -12,10 +12,10 @@ Commands related to setting up matches and managing players.
 
 | Command | Argument | Description |
 | ------- | -------- | ----------- |
-| `!startMatch`, `!start`, `!play` | List of `@Player` mentions | Starts a new match with up to five players. Use **!startMatch @player1 @player2...** to start a match with the mentioned players. This command must be used before in order for any other match commands to work. |
+| `!startMatch`, `!start`, `!play` | List of `@Player` mentions, or `here` | Starts a new match with up to five players. Use **!startMatch here** to start a match with everyone in your current voice channel, or **!startMatch @player1 @player2...** to start a match with the mentioned players. This command must be used before in order for any other match commands to work. |
 | `!addPlayers`, `!addPlayer` | List of `@Player` mentions | Adds additional players to the match. Use **!addPlayers @player1 @player2...** to add the mentioned players to the match. The total number of players cannot exceed five, use **!removePlayers** first if you need to. |
 | `!removePlayers`, `!removePlayer` | List of `@Player` mentions | Removes players from the match. Use **!removePlayers @player1 @player2...** to remove the mentioned players from the match. At least one player must remain in the match. |
-| `!another`, `!again`, 👍 | | Starts a new match with the same players as the previous one. |
+| `!another`, `!again`, 👍 | `here` 🎤 | Starts a new match with the same players as the previous one, or with everyone in the current voice channel if the `here` argument was provided. |
 | `!goodnight`, `!bye`, 👎 | | Ends the current match and/or session. |
 
 ### Ongoing Match
@@ -57,8 +57,6 @@ The bot needs the `Server Members` and `Messages` intents to work properly, and 
 - Read Messages/View Channels
 - Send Messages
 - Manage Messages
-<!-- TODO -->
-<!-- - Add Reactions -->
 
 After selecting the given intents and permissions, an invite link is generated that you can use to add the bot to your server.
 

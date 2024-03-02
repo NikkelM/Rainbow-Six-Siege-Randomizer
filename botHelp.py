@@ -51,5 +51,5 @@ class CustomHelpCommand(commands.HelpCommand):
         await self.send_help_embed(title, group.help, group.commands)
 
     async def send_cog_help(self, cog: commands.Cog):
-        title = cog.qualified_name or "No"
-        await self.send_help_embed(f'{title} Category', cog.description, cog.get_commands())
+        title = cog.qualified_name or "No Category"
+        await self.send_help_embed(title, cog.description, cog.get_commands())
