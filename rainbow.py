@@ -35,19 +35,16 @@ class RainbowMatch:
         """Returns a dictionary with the list of attacker and defender operators."""
         return {
             "attackers": [
-                "Sledge", "Thatcher", "Ash", "Thermite", "Twitch", "Montagne",
-                "Glaz", "Fuze", "Blitz", "IQ", "Buck", "Blackbeard", "Capitão",
-                "Hibana", "Jackal", "Ying", "Zofia", "Dokkaebi", "Lion", "Finka",
-                "Maverick", "Nomad", "Gridlock", "Nøkk", "Amaru", "Kali", "Iana",
-                "Ace", "Zero", "Flores", "Osa", "Sens", "Grim", "Brava", "Ram"
+                "Sledge", "Thatcher", "Ash", "Thermite", "Twitch", "Montagne", "Glaz", "Fuze", "Blitz", "IQ",
+                "Buck", "Blackbeard", "Capitão", "Hibana", "Jackal", "Ying", "Zofia", "Dokkaebi", "Lion", "Finka",
+                "Maverick", "Nomad", "Gridlock", "Nøkk", "Amaru", "Kali", "Iana", "Ace", "Zero", "Flores",
+                "Osa", "Sens", "Grim", "Brava", "Ram"
             ],
             "defenders": [
-                "Smoke", "Mute", "Castle", "Pulse", "Doc", "Rook", "Kapkan",
-                "Tachanka", "Jäger", "Bandit", "Frost", "Valkyrie", "Caveira",
-                "Echo", "Mira", "Lesion", "Ela", "Vigil", "Alibi", "Maestro",
-                "Clash", "Kaid", "Mozzie", "Warden", "Goyo", "Wamai", "Oryx",
-                "Melusi", "Aruni", "Thunderbird", "Thorn", "Azami", "Solis",
-                "Fenrir", "Tubarão"
+                "Smoke", "Mute", "Castle", "Pulse", "Doc", "Rook", "Kapkan", "Tachanka", "Jäger", "Bandit",
+                "Frost", "Valkyrie", "Caveira", "Echo", "Mira", "Lesion", "Ela", "Vigil", "Alibi", "Maestro",
+                "Clash", "Kaid", "Mozzie", "Warden", "Goyo", "Wamai", "Oryx", "Melusi", "Aruni", "Thunderbird",
+                "Thorn", "Azami", "Solis", "Fenrir", "Tubarão"
             ]
         }
     
@@ -180,15 +177,22 @@ class RainbowMatch:
             return False
 
         self.map = mapMapping[0]
+        if len(self._getMap(map)[1]) < len(self.sites):
+            for site in self.sites:
+                if site >= len(self._getMap(map)[1]):
+                    self.sites.remove(site)
         return True
     
     def setupRound(self):
         """Starts a new round, returning the chosen operators and site."""
         siteIndex, playedSite = self.getPlayedSite() if self.playingOnSide == "defense" else (None, None)
         playedOperators = self.getPlayedOperators()
+        attackers, defenders = self._getOperators().values()
+
         self.rounds.append({
             "site": siteIndex,
-            "operators": playedOperators[:len(self.players)],
+            # The 1-indexed index of the current operator, negated if it is a defender
+            "operators": [(attackers.index(op) + 1) if self.playingOnSide == "attack" else -(defenders.index(op) + 1) for op in playedOperators[:len(self.players)]],
             "result": None
         })
         return playedOperators, playedSite
@@ -208,10 +212,12 @@ class RainbowMatch:
         """Resolves the round, updating the scores and the side, and returns True if the match is still ongoing."""
         if result == "won":
             self.scores["blue"] += 1
+            self.rounds[-1]["result"] = 1
             if self.playingOnSide == "defense":
                 self.sites.remove(self.rounds[-1]["site"])
         else:
             self.scores["red"] += 1
+            self.rounds[-1]["result"] = 0
 
         if self.scores["blue"] == 3 and self.scores["red"] == 3:
             self.playingOnSide = overtimeSide

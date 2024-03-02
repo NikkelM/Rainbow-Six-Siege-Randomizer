@@ -142,7 +142,9 @@ class MatchManagement(commands.Cog, name='Match Management'):
 
         if not match.isMatchFinished():
             discordMessage['messageContent']['playersBanner'] = f"Stopped a match with {match.playersString}{' on **' + match.map + '**' if match.map else ''} before completing it.\n"
-        discordMessage['messageContent']['matchScore'] = f"The score was **{match.scores['blue']}**:**{match.scores['red']}**{', we were playing on **' + match.playingOnSide + '**' if match.playingOnSide else ''}.\n"
+            discordMessage['messageContent']['matchScore'] = f"The score was **{match.scores['blue']}**:**{match.scores['red']}**.\n"
+        else:
+            discordMessage['messageContent']['matchScore'] = f"The final score was **{match.scores['blue']}**:**{match.scores['red']}**.\n"
         discordMessage['messageContent']['roundMetadata'] = ''
         discordMessage['messageContent']['roundLineup'] = ''
         discordMessage['messageContent']['banMetadata'] = ''
@@ -170,8 +172,9 @@ class MatchManagement(commands.Cog, name='Match Management'):
 
         if not match.isMatchFinished():
             discordMessage['messageContent']['playersBanner'] = f"Stopped a match with {match.playersString}{' on **' + match.map + '**' if match.map else ''} before completing it.\n"
-            discordMessage['messageContent']['matchScore'] = f"The score was **{match.scores['blue']}**:**{match.scores['red']}**{', we were playing on **' + match.playingOnSide + '**' if match.playingOnSide else ''}.\n"
+            discordMessage['messageContent']['matchScore'] = f"The score was **{match.scores['blue']}**:**{match.scores['red']}**.\n"
         else:
+            discordMessage['messageContent']['matchScore'] = f"The final score was **{match.scores['blue']}**:**{match.scores['red']}**.\n"
             discordMessage['messageContent']['playersBanner'] = f"Finished a match with {match.playersString}{' on **' + match.map + '**' if match.map else ''}.\n"
         discordMessage['messageContent']['roundMetadata'] = ''
         discordMessage['messageContent']['roundLineup'] = ''

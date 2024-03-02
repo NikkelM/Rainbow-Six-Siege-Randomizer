@@ -16,7 +16,7 @@ class RainbowBot(commands.Bot):
         self.conn = sqlite3.connect("data/rainbowDiscordBot.db")
         self.cursor = self.conn.cursor()
 
-        # Create the ongoing matches table
+        # Currently ongoing matches, one per server
         self.cursor.execute("""
             CREATE TABLE IF NOT EXISTS ongoing_matches (
                 server_id INTEGER PRIMARY KEY,
@@ -25,25 +25,24 @@ class RainbowBot(commands.Bot):
             )
         """)
 
-        # Create matches table
+        # Matches with their map and overall scores
         self.cursor.execute("""
             CREATE TABLE IF NOT EXISTS matches (
                 match_id TEXT PRIMARY KEY,
                 server_id INTEGER,
                 map TEXT,
-                blue_score INTEGER,
-                red_score INTEGER
+                result INTEGER
             )
         """)
 
-        # Create players table
+        # Players that have ever played in a match
         self.cursor.execute("""
             CREATE TABLE IF NOT EXISTS players (
                 player_id TEXT PRIMARY KEY
             )
         """)
 
-        # Create player_matches table
+        # Matches a certain player has played
         self.cursor.execute("""
             CREATE TABLE IF NOT EXISTS player_matches (
                 player_id TEXT,
@@ -53,26 +52,26 @@ class RainbowBot(commands.Bot):
             )
         """)
 
-        # Create rounds table
+        # Played sites and outcome for each round, 1 is win, 0 is loss
         self.cursor.execute("""
             CREATE TABLE IF NOT EXISTS rounds (
-                round_id INTEGER PRIMARY KEY,
                 match_id TEXT,
-                site_index INTEGER,
-                round_result TEXT,
+                round_num INTEGER,
+                site INTEGER,
+                result INTEGER,
                 FOREIGN KEY(match_id) REFERENCES matches(match_id)
             )
         """)
 
-        # Create player_rounds table
+        # Operators played by a player in each round
         self.cursor.execute("""
             CREATE TABLE IF NOT EXISTS player_rounds (
                 player_id TEXT,
-                round_id INTEGER,
-                operator TEXT,
-                site INTEGER,
-                FOREIGN KEY(player_id) REFERENCES players(player_id),
-                FOREIGN KEY(round_id) REFERENCES rounds(round_id)
+                match_id TEXT,
+                round_num INTEGER,
+                operator INTEGER,
+                FOREIGN KEY(match_id) REFERENCES matches(match_id),
+                FOREIGN KEY(player_id) REFERENCES players(player_id)
             )
         """)
 
@@ -209,31 +208,27 @@ class RainbowBot(commands.Bot):
         matchId = match.matchId
         serverId = ctx.guild.id
         matchMap = match.map
-        blueScore = match.scores['blue']
-        redScore = match.scores['red']
+        didWin = match.scores['blue'] > match.scores['red']
 
-        self.cursor.execute("INSERT INTO matches (match_id, server_id, map, blue_score, red_score) VALUES (?, ?, ?, ?, ?)", (matchId, serverId, matchMap, blueScore, redScore))
+        self.cursor.execute("INSERT INTO matches (match_id, server_id, map, result) VALUES (?, ?, ?, ?)", (matchId, serverId, matchMap, didWin))
         self.conn.commit()
 
         for player in match.players:
             self.cursor.execute("INSERT OR IGNORE INTO players (player_id) VALUES (?)", (player['id'],))
             self.cursor.execute("INSERT INTO player_matches (player_id, match_id) VALUES (?, ?)", (player['id'], matchId))
             self.conn.commit()
-        
-        # for round in match.rounds:
-        #     roundId = round['roundId']
-        #     siteIndex = round['siteIndex']
-        #     roundResult = round['roundResult']
-        #     self.cursor.execute("INSERT INTO rounds (round_id, match_id, site_index, round_result) VALUES (?, ?, ?, ?)", (roundId, matchId, siteIndex, roundResult))
-        #     self.conn.commit()
 
-        #     for player in round['players']:
-        #         playerId = player['id']
-        #         operator = player['operator']
-        #         site = player['site']
-        #         self.cursor.execute("INSERT OR IGNORE INTO players (player_id) VALUES (?)", (playerId,))
-        #         self.cursor.execute("INSERT INTO player_rounds (player_id, round_id, operator, site) VALUES (?, ?, ?, ?)", (playerId, roundId, operator, site))
-        #         self.conn.commit()
+        for roundNumber, round in enumerate(match.rounds):
+            site = round['site']
+            roundResult = round['result']
+            self.cursor.execute("INSERT INTO rounds (round_num, match_id, site, result) VALUES (?, ?, ?, ?)", (roundNumber, matchId, site, roundResult))
+            self.conn.commit()
+
+            for playerIndex, player in enumerate(match.players):
+                playerId = player['id']
+                operator = round['operators'][playerIndex]
+                self.cursor.execute("INSERT INTO player_rounds (player_id, match_id, round_num, operator) VALUES (?, ?, ?, ?)", (playerId, matchId, roundNumber, operator))
+                self.conn.commit()
 
     def saveDiscordMessage(self, ctx: commands.Context, discordMessage):
         serverId = ctx.guild.id
