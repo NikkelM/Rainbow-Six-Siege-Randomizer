@@ -9,7 +9,7 @@ class MatchStatistics(commands.Cog, name='Match Statistics'):
 
     @commands.command(aliases=['interrogation'])
     async def _interrogation(self, ctx: commands.Context, player: discord.User = None):
-        """Tracks a player getting an interrogation as Caveira."""
+        """A player has interrogated someone as Caveira."""
         match, discordMessage, canContinue = await self.bot.getMatchData(ctx)
         if not canContinue:
             return
