@@ -27,17 +27,32 @@ class MatchManagement(commands.Cog, name='Match Management'):
         discordMessage = self.bot.resetDiscordMessage(ctx.guild.id)
         self.bot.cursor.execute("INSERT INTO matches (server_id, discord_message) VALUES (?, ?)", (serverId, json.dumps(discordMessage)))
 
-        if len(playerNames) > 5:
+        # Instead of a player name, the user can use the argument "voice" to start a match with the players in their voice channel
+        if len(playerNames) == 1 and playerNames[0].lower() in ['voice', 'voicechannel', 'channel', 'here']:
+            voiceChannel = ctx.author.voice.channel if ctx.author.voice else None
+            if voiceChannel is None:
+                discordMessage['messageContent']['playersBanner'] = 'You must be in a voice channel to use this command argument. You can always start a match using "**!startMatch @player1 @player2...**".'
+                await self.bot.sendMessage(ctx, discordMessage)
+                return
+            playerObjects = voiceChannel.members
+            if len(playerObjects) > 5:
+                discordMessage['messageContent']['playersBanner'] = 'You can only start a match with up to **five** players! Make sure at most five players are in your voice channel, or use "**!startMatch @player1 @player2...**" to select participating players.'
+                await self.bot.sendMessage(ctx, discordMessage)
+                return
+            match.setPlayers(playerObjects)
+            discordMessage['messageContent']['playersBanner'] = f"Starting a new match with everyone in **{voiceChannel}** ({match.playersString}){' on **' + match.map + '**' if match.map else ''}.\n"
+
+        elif len(playerNames) > 5:
             discordMessage['messageContent']['playersBanner'] = 'You can only start a match with up to **five** players! Use "**!startMatch @player1 @player2...**" to try again.'
             await self.bot.sendMessage(ctx, discordMessage)
             return
         elif len(playerNames) > 0:
             playerObjects = self._validatePlayerNames(ctx, playerNames)
-            if playerObjects is not None:
+            if len(playerObjects) > 0:
                 match.setPlayers(playerObjects)
                 discordMessage['messageContent']['playersBanner'] = f"Starting a new match with {match.playersString}{' on **' + match.map + '**' if match.map else ''}.\n"
             else:
-                discordMessage['messageContent']['playersBanner'] = 'At least one of the players you mentioned is not on this server, please try again.'
+                discordMessage['messageContent']['playersBanner'] = 'None of the players were mentioned correctly using the **@player** syntax, or none of the mentioned players are on this server. Use "**!startMatch @player1 @player2...**" to try again.'
                 await self.bot.sendMessage(ctx, discordMessage)
                 return
         else:
