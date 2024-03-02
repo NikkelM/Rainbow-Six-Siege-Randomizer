@@ -15,13 +15,66 @@ class RainbowBot(commands.Bot):
         os.makedirs('data', exist_ok=True)
         self.conn = sqlite3.connect("data/rainbowDiscordBot.db")
         self.cursor = self.conn.cursor()
+
+        # Create the ongoing matches table
         self.cursor.execute("""
-            CREATE TABLE IF NOT EXISTS matches (
-                server_id TEXT PRIMARY KEY,
+            CREATE TABLE IF NOT EXISTS ongoing_matches (
+                server_id INTEGER PRIMARY KEY,
                 match_data TEXT,
                 discord_message TEXT
             )
         """)
+
+        # Create matches table
+        self.cursor.execute("""
+            CREATE TABLE IF NOT EXISTS matches (
+                match_id TEXT PRIMARY KEY,
+                server_id INTEGER,
+                map TEXT,
+                match_result TEXT
+            )
+        """)
+
+        # Create players table
+        self.cursor.execute("""
+            CREATE TABLE IF NOT EXISTS players (
+                player_id TEXT PRIMARY KEY
+            )
+        """)
+
+        # Create player_matches table
+        self.cursor.execute("""
+            CREATE TABLE IF NOT EXISTS player_matches (
+                player_id TEXT,
+                match_id TEXT,
+                FOREIGN KEY(player_id) REFERENCES players(player_id),
+                FOREIGN KEY(match_id) REFERENCES matches(match_id)
+            )
+        """)
+
+        # Create rounds table
+        self.cursor.execute("""
+            CREATE TABLE IF NOT EXISTS rounds (
+                round_id INTEGER PRIMARY KEY,
+                match_id TEXT,
+                site_index INTEGER,
+                round_result TEXT,
+                FOREIGN KEY(match_id) REFERENCES matches(match_id)
+            )
+        """)
+
+        # Create player_rounds table
+        self.cursor.execute("""
+            CREATE TABLE IF NOT EXISTS player_rounds (
+                player_id TEXT,
+                round_id INTEGER,
+                operator TEXT,
+                site INTEGER,
+                FOREIGN KEY(player_id) REFERENCES players(player_id),
+                FOREIGN KEY(round_id) REFERENCES rounds(round_id)
+            )
+        """)
+
         self.conn.commit()
 
         intents = discord.Intents.default()
@@ -87,8 +140,8 @@ class RainbowBot(commands.Bot):
             print('Unknown reaction:', reaction.emoji)
             return
 
-    def resetDiscordMessage(self, serverId: str):
-        self.cursor.execute("DELETE FROM matches WHERE server_id = ?", (serverId,))
+    def resetDiscordMessage(self, serverId: int):
+        self.cursor.execute("DELETE FROM ongoing_matches WHERE server_id = ?", (serverId,))
         self.conn.commit()
         return {
             'matchMessageId': None,
@@ -146,22 +199,22 @@ class RainbowBot(commands.Bot):
                     await message.remove_reaction(current, user)
     
     def saveMatch(self, ctx: commands.Context, match):
-        serverId = str(ctx.guild.id)
+        serverId = ctx.guild.id
         matchData = json.dumps(match.__dict__)
-        self.cursor.execute("UPDATE matches SET match_data = ? WHERE server_id = ?", (matchData, serverId))
+        self.cursor.execute("UPDATE ongoing_matches SET match_data = ? WHERE server_id = ?", (matchData, serverId))
         self.conn.commit()
 
     def saveDiscordMessage(self, ctx: commands.Context, discordMessage):
-        serverId = str(ctx.guild.id)
+        serverId = ctx.guild.id
         discordMessage = json.dumps(discordMessage)
-        self.cursor.execute("UPDATE matches SET discord_message = ? WHERE server_id = ?", (discordMessage, serverId))
+        self.cursor.execute("UPDATE ongoing_matches SET discord_message = ? WHERE server_id = ?", (discordMessage, serverId))
         self.conn.commit()
 
     async def getMatchData(self, ctx: commands.Context):
         """Gets the match data and discord message from the database. If there is no match in progress, it will return a message to the user. If there is a match in progress, it will return the match data and discord message."""
-        serverId = str(ctx.guild.id)
+        serverId = ctx.guild.id
         matchData, discordMessage = None, None
-        result = self.cursor.execute("SELECT match_data, discord_message FROM matches WHERE server_id = ?", (serverId,)).fetchone()
+        result = self.cursor.execute("SELECT match_data, discord_message FROM ongoing_matches WHERE server_id = ?", (serverId,)).fetchone()
 
         if result is not None:
             matchData, discordMessage = result
