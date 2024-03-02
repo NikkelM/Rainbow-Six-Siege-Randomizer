@@ -1,10 +1,12 @@
 import random
 import re
+import uuid
 from fuzzywuzzy import process
 
 class RainbowMatch:
     def __init__(self, existingMatch=None):
         if existingMatch:
+            self.matchId = existingMatch['matchId']
             self.bannedOperators = existingMatch['bannedOperators']
             self.map = existingMatch['map']
             self.sites = existingMatch['sites']
@@ -16,6 +18,7 @@ class RainbowMatch:
             self.players = existingMatch['players']
             self.playersString = existingMatch['playersString']
         else:
+            self.matchId = str(uuid.uuid4())
             self.bannedOperators = []
             self.map = None
             self.sites = self._resetSites()
