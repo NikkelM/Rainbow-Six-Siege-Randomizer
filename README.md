@@ -106,7 +106,7 @@ gcloud auth configure-docker
 You can then build the Docker image with the following command, make sure to replace `<TOKEN>` with your bot's token and `<projectId>` with your project's ID:
 
 ```bash
-docker build --build-arg DISCORD_BOT_TOKEN=<TOKEN> IS_DEBUG=0 -t gcr.io/<projectId>/rainbow-six-siege-discord-bot .
+docker build --build-arg DISCORD_BOT_TOKEN=<TOKEN> --build-arg IS_DEBUG=0 -t gcr.io/<projectId>/rainbow-six-siege-discord-bot .
 docker push gcr.io/<projectId>/rainbow-six-siege-discord-bot
 ```
 
