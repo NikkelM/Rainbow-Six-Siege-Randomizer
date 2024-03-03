@@ -39,6 +39,7 @@ Commands to track additional statistics during an ongoing match.
 | Command | Argument | Description |
 | ------- | -------- | ----------- |
 | `!interrogation` | A `@Player` mention (optional) | A player has interrogated someone as Caveira. If no `@Player` mention is provided, the message author is assumed to have gotten the interrogation. |
+| `!ace` | A `@Player` mention (optional) | A player has gotten an ace. If no `@Player` mention is provided, the message author is assumed to have gotten the ace. |
 
 ### General
 

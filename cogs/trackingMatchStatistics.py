@@ -29,6 +29,29 @@ class TrackingMatchStatistics(commands.Cog, name='Tracking Match Statistics'):
 
         self.bot.saveOngoingMatch(ctx, match)
         await self.bot.sendMessage(ctx, discordMessage)
+    
+    @commands.command(aliases=['ace'])
+    async def _ace(self, ctx: commands.Context, player: discord.User = None):
+        """A player has gotten an ace. If no **@Player** mention is provided, the message author is assumed to have gotten the ace."""
+        match, discordMessage, canContinue = await self.bot.getMatchData(ctx)
+        if not canContinue:
+            return
+        if ctx.message.id != discordMessage['matchMessageId'] or not discordMessage['matchMessageId']:
+            await ctx.message.delete()
+        
+        if player is None:
+            player = ctx.author
+
+        # If the mentioned player is not a player in the match, return an error message.
+        if player.id not in [matchPlayer['id'] for matchPlayer in match.players]:
+            discordMessage['messageContent']['statsBanner'] = f'{player.mention} is not playing in the current match, so they cannot have aced the round.'
+        else:
+            match.addPlayerStat(player.id, 'ace')
+            numAces = match.getPlayerStat(player.id, 'ace')
+            discordMessage['messageContent']['statsBanner'] = f'{player.mention} has aced the round! They have gotten {numAces} ace{"s" if numAces != 1 else ""} in this match!'
+
+        self.bot.saveOngoingMatch(ctx, match)
+        await self.bot.sendMessage(ctx, discordMessage)
 
 async def setup(bot: RainbowBot):
     await bot.add_cog(TrackingMatchStatistics(bot))
