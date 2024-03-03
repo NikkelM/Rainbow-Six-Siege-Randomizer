@@ -168,7 +168,7 @@ gcloud auth configure-docker
 
 Docker has now been set up, and you should be authenticated with your GCP account.
 Before running the next commands, make sure to first copy the database file (`rainbowDiscordBot.db`) to the VM.
-You can create a new database file by shortly starting the bot locally and then copying out from the `data` folder.
+You can create a new database file by shortly starting the bot locally and then copying it out from the `data` folder.
 
 Then, set up a new Docker volume and copy the database file into it:
 
