@@ -51,7 +51,7 @@ class Statistics(commands.Cog, name='Statistics'):
             mapsWinLoss, overallWinLoss, _ = self._calculateWinLossRatio(maps)
             message += f'Matches played: **{len(maps)}**, with **{overallWinLoss["wins"]}** wins and **{overallWinLoss["losses"]}** losses.\n'
             message += f'**Overall Win/Loss Ratio:** {round(overallWinLoss["wins"]/overallWinLoss["losses"], 2) if overallWinLoss["losses"] != 0 else float(overallWinLoss["wins"])}\n\n'
-            sortedMaps = sorted(mapsWinLoss, key=lambda x: mapsWinLoss[x]['wins']/mapsWinLoss[x]['losses']if mapsWinLoss[x]["losses"] != 0 else mapsWinLoss[x]['wins'], reverse=True)[0:3]
+            sortedMaps = sorted(mapsWinLoss, key=lambda x: mapsWinLoss[x]['wins']/mapsWinLoss[x]['losses']if mapsWinLoss[x]["losses"] != 0 else mapsWinLoss[x]['wins'], reverse=True)[:3]
             if (len(sortedMaps) > 0):
                 # Get the win/loss of each defensive site for the top maps
                 message += 'Top maps by Win/Loss ratio:\n'
@@ -69,7 +69,6 @@ class Statistics(commands.Cog, name='Statistics'):
 
             # Operators
             if (len(operators) > 0):
-                message += 'Top operators by Win/Loss:\n'
                 operatorWinsLosses = {}
                 for operator in operators:
                     if operator[0] not in operatorWinsLosses:
@@ -78,9 +77,21 @@ class Statistics(commands.Cog, name='Statistics'):
                         operatorWinsLosses[operator[0]]['wins'] += 1
                     else:
                         operatorWinsLosses[operator[0]]['losses'] += 1
-                sortedOperators = sorted(operatorWinsLosses, key=lambda x: operatorWinsLosses[x]['wins']/operatorWinsLosses[x]['losses'] if operatorWinsLosses[x]["losses"] != 0 else operatorWinsLosses[x]['wins'], reverse=True)[0:5]
-                for operator in sortedOperators:
-                    message += f'**{self._getOperatorFromId(operator)}:** {round(operatorWinsLosses[operator]["wins"]/operatorWinsLosses[operator]["losses"], 2) if operatorWinsLosses[operator]["losses"] != 0 else float(operatorWinsLosses[operator]["wins"])}\n'
+                # Split the dictionary into two, one for attackers and one for defenders
+                attackers = {k: operatorWinsLosses[k] for k in operatorWinsLosses if k > 0}
+                defenders = {k: operatorWinsLosses[k] for k in operatorWinsLosses if k < 0}
+                sorted_attackers = sorted(attackers, key=lambda x: attackers[x]['wins']/attackers[x]['losses'] if attackers[x]["losses"] != 0 else attackers[x]['wins'], reverse=True)[:3]
+                sorted_defenders = sorted(defenders, key=lambda x: defenders[x]['wins']/defenders[x]['losses'] if defenders[x]["losses"] != 0 else defenders[x]['wins'], reverse=True)[:3]
+
+                # Add the top three attackers to the message
+                message += 'Top Attackers by Win/Loss:\n'
+                for operator in sorted_attackers:
+                    message += f'**{self._getOperatorFromId(operator)}:** {round(attackers[operator]["wins"]/attackers[operator]["losses"], 2) if attackers[operator]["losses"] != 0 else float(attackers[operator]["wins"])}\n'
+
+                # Add the top three defenders to the message
+                message += '\nTop Defenders by Win/Loss:\n'
+                for operator in sorted_defenders:
+                    message += f'**{self._getOperatorFromId(operator)}:** {round(defenders[operator]["wins"]/defenders[operator]["losses"], 2) if defenders[operator]["losses"] != 0 else float(defenders[operator]["wins"])}\n'
 
             # Additional statistics
             if len(additionalStatistics) > 0:
