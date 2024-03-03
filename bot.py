@@ -9,6 +9,7 @@ from rainbow import RainbowMatch
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_BOT_TOKEN')
+IS_DEBUG = os.getenv('IS_DEBUG') == '1'
 
 class RainbowBot(commands.Bot):
     def __init__(self):
@@ -89,6 +90,21 @@ class RainbowBot(commands.Bot):
             )
         """)
 
+        if IS_DEBUG:
+            print('DEBUG MODE: Deleting matches with no map set')
+            # Get all match ids where map is null
+            self.cursor.execute("SELECT match_id FROM matches WHERE map IS NULL")
+            match_ids = [row[0] for row in self.cursor.fetchall()]
+
+            # Delete data associated with these match ids in the other tables
+            for match_id in match_ids:
+                self.cursor.execute("DELETE FROM player_matches WHERE match_id = ?", (match_id,))
+                self.cursor.execute("DELETE FROM rounds WHERE match_id = ?", (match_id,))
+                self.cursor.execute("DELETE FROM player_rounds WHERE match_id = ?", (match_id,))
+
+            # Delete matches where map is null
+            self.cursor.execute("DELETE FROM matches WHERE map IS NULL")
+
         self.conn.commit()
 
         intents = discord.Intents.default()
@@ -103,7 +119,8 @@ class RainbowBot(commands.Bot):
             'general',
             'matchManagement',
             'ongoingMatch',
-            'trackingMatchStatistics'
+            'trackingMatchStatistics',
+            'statistics'
         ]
         for cog in cogs_list:
             await bot.load_extension(f'cogs.{cog}')
@@ -180,7 +197,7 @@ class RainbowBot(commands.Bot):
             'reactions': []
         }
 
-    async def sendMessage(self, ctx: commands.Context, discordMessage, forgetMatch=False):
+    async def sendMatchMessage(self, ctx: commands.Context, discordMessage, forgetMatch=False):
         message = '\n'.join([v for v in discordMessage['messageContent'].values() if v != ''])
 
         if discordMessage['matchMessageId']:
@@ -229,9 +246,12 @@ class RainbowBot(commands.Bot):
         self.conn.commit()
 
     def saveCompletedMatch(self, ctx: commands.Context, match: RainbowMatch):
+        matchMap = match.map
+        # Proper matches will have a map name set, so we only save those to the database
+        if not IS_DEBUG and matchMap is None:
+            return
         matchId = match.matchId
         serverId = ctx.guild.id
-        matchMap = match.map
         didWin = match.scores['blue'] > match.scores['red']
 
         self.cursor.execute("INSERT INTO matches (match_id, server_id, map, result) VALUES (?, ?, ?, ?)", (matchId, serverId, matchMap, didWin))
@@ -285,7 +305,7 @@ class RainbowBot(commands.Bot):
 
         if matchData is None and shouldAlertOnNoMatch:
             discordMessage['messageContent']['playersBanner'] = 'No match in progress. Use "**!startMatch @player1 @player2...**" to start a new match.'
-            await bot.sendMessage(ctx, discordMessage, True)
+            await bot.sendMatchMessage(ctx, discordMessage, True)
             return None, None, False
 
         match = RainbowMatch(matchData)
