@@ -229,7 +229,6 @@ class OngoingMatch(commands.Cog, name='Ongoing Match'):
         discordMessage['messageContent']['roundLineup'] = ''
         discordMessage['messageContent']['playersBanner'] = f"Finished a match with {match.playersString}{' on **' + match.map + '**' if match.map else ''}.\n"
         discordMessage['messageContent']['matchScore'] = f'The match is over! The final score was **{match.scores["blue"]}**:**{match.scores["red"]}**.'
-        # TODO: Add a list of tracked stats for the current match
         discordMessage['messageContent']['statsBanner'] = ''
         discordMessage['messageContent']['actionPrompt'] = 'Use "**!another**" 👍 to start a new match with the same players, "**!another here**" 🎤 to start a match with everyone in your voice channel, or "**!goodnight**" 👎 to end the session.'
         discordMessage['reactions'] = ['👍', '🎤', '👎']
