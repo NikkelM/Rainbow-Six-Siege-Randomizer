@@ -2,14 +2,14 @@ import discord
 from discord.ext import commands
 from bot import RainbowBot
 
-class MatchStatistics(commands.Cog, name='Match Statistics'):
-    """Commands related to tracking additional match statistics."""
+class TrackingMatchStatistics(commands.Cog, name='Tracking Match Statistics'):
+    """Commands to track additional statistics during an ongoing match."""
     def __init__(self, bot: RainbowBot):
         self.bot = bot
 
     @commands.command(aliases=['interrogation'])
     async def _interrogation(self, ctx: commands.Context, player: discord.User = None):
-        """A player has interrogated someone as Caveira."""
+        """A player has interrogated someone as Caveira. If no **@Player** mention is provided, the message author is assumed to have gotten the interrogation."""
         match, discordMessage, canContinue = await self.bot.getMatchData(ctx)
         if not canContinue:
             return
@@ -31,4 +31,4 @@ class MatchStatistics(commands.Cog, name='Match Statistics'):
         await self.bot.sendMessage(ctx, discordMessage)
 
 async def setup(bot: RainbowBot):
-    await bot.add_cog(MatchStatistics(bot))
+    await bot.add_cog(TrackingMatchStatistics(bot))

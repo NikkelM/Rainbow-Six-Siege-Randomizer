@@ -3,7 +3,7 @@
 A discord bot that randomizes bans, operator selections and more for Rainbow Six: Siege.
 
 ## Usage
-
+<!-- TODO: Add new commands for statistics -->
 The bot has the following commands, some of which can be invoked using a reaction instead of a message:
 
 ### Match Management
@@ -31,6 +31,14 @@ Commands to interact with an ongoing match, such as banning operators or playing
 | `!defense`, `!startDefense`, `!defend`, 🛡️ | | Starts the match on defense. |
 | `!won`, `!w` | `attack` ⚔️ or `defense` 🛡️, if winning starts overtime | Marks the current round as won and starts a new round. If winning starts overtime, you must specify the side you start overtime on with **!won attack** ⚔️ or **!won defense** 🛡️. |
 | `!lost`, `!l` | `attack` ⚔️ or `defense` 🛡️, if losing starts overtime | Marks the current round as lost and starts a new round. If losing starts overtime, you must specify the side you start overtime on with **!lost attack** ⚔️ or **!lost defense** 🛡️. |
+
+### Tracking Match Statistics
+
+Commands to track additional statistics during an ongoing match.
+
+| Command | Argument | Description |
+| ------- | -------- | ----------- |
+| `!interrogation` | A `@Player` mention (optional) | A player has interrogated someone as Caveira. If no `@Player` mention is provided, the message author is assumed to have gotten the interrogation. |
 
 ### General
 

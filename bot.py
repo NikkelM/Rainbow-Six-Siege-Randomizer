@@ -103,7 +103,7 @@ class RainbowBot(commands.Bot):
             'general',
             'matchManagement',
             'ongoingMatch',
-            'matchStatistics'
+            'trackingMatchStatistics'
         ]
         for cog in cogs_list:
             await bot.load_extension(f'cogs.{cog}')
