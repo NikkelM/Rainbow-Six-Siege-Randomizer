@@ -3,6 +3,7 @@
 A discord bot that randomizes bans, operator selections and more for Rainbow Six: Siege.
 
 ## Usage
+
 The bot has the following commands, some of which can be invoked using a reaction instead of a message:
 
 ### Match Management
