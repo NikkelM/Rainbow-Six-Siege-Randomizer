@@ -1,82 +1,91 @@
 import random
 import re
+import uuid
 from fuzzywuzzy import process
+from dataclasses import dataclass
+
+@dataclass
+class RainbowData:
+    attackers = [
+        "Sledge", "Thatcher", "Ash", "Thermite", "Twitch", "Montagne", "Glaz", "Fuze", "Blitz", "IQ",
+        "Buck", "Blackbeard", "Capitão", "Hibana", "Jackal", "Ying", "Zofia", "Dokkaebi", "Lion", "Finka",
+        "Maverick", "Nomad", "Gridlock", "Nøkk", "Amaru", "Kali", "Iana", "Ace", "Zero", "Flores",
+        "Osa", "Sens", "Grim", "Brava", "Ram"
+    ]
+
+    defenders = [
+        "Smoke", "Mute", "Castle", "Pulse", "Doc", "Rook", "Kapkan", "Tachanka", "Jäger", "Bandit",
+        "Frost", "Valkyrie", "Caveira", "Echo", "Mira", "Lesion", "Ela", "Vigil", "Alibi", "Maestro",
+        "Clash", "Kaid", "Mozzie", "Warden", "Goyo", "Wamai", "Oryx", "Melusi", "Aruni", "Thunderbird",
+        "Thorn", "Azami", "Solis", "Fenrir", "Tubarão"
+    ]
+
+    maps = {
+        'Lair': ['2F Master Office/2F R6 Room', '1F Bunks/1F Briefing', '1F Armory/1F Weapon Maintenance', 'B Lab/B Lab Support'],
+        'Club House': ['2F Bedroom/2F Gym', '2F Cash Room/2F CCTV Room', '1F Bar/1F Stage', 'B Church/B Arsenal Room'],
+        'Consulate': ['2F Consul Office/2F Meeting Room', '1F Exposition Room/1F Piano Room', 'B Servers/1F Tellers', 'B Cafeteria/B Garage'],
+        'Oregon': ['2F Kids\' Dorms/2F Dorms Main Hall', '1F Kitchen/1F Dining Hall', '1F Meeting Hall/1F Kitchen', 'B Laundry Room/B Supply Room'],
+        'Kafe Dostoyevsky': ['3F Cocktail Lounge/3F Bar', '2F Fireplace Hall/2F Mining Room', '2F Fireplace Hall/2F Reading Room', '1F Kitchen Cooking/1F Kitchen Service'],
+        'Villa': ['2F Games Room/2F Aviator Room', '2F Statuary Room/2F Trophy Room', 'B Living Room/B Library', '1F Dining Room/1F Kitchen'],
+        'Coastline': ['2F Billiards Room/2F Hookah Lounge', '2F Theater/2F Penthouse', '1F Kitchen/1F Service Entrance', '1F Blue Bar/1F Sunrise Bar'],
+        'Border': ['2F Armory Lockers/2F Archives', '1F Ventilation Room/1F Workshop', '1F Bathroom/1F Tellers', '1F Customs Inspections/1F Supply Room'],
+        'Bank': ['2F Executive Office/2F CEO Office', '1F Staff Room/1F Open Area', '1F Tellers\' Office/1F Archives', 'B Lockers/B CCTV Room'],
+        'Chalet': ['2F Master Bedroom/2F Office', '1F Bar/1F Gaming Room', '1F Kitchen/1F Dining Room', 'B Wine Cellar/B Snowmobile Garage'],
+        'Favela': ['2F Storage/2F Coin Farm', '2F Coin Farm/2F Bunks', '1F Pink Apartment/1F Pink Kitchen', '1F Blue Bedroom/1F Green Apartment'],
+        'Yacht': ['4F Cockpit/4F Maps Room', '2F Engine Control/2F Kitchen', '2F Cafeteria/2F Staff Dormitory', '1F Server Room/1F Engine Storage'],
+        'House': ['2F Car Room/2F Pink Room', '2F Master Bedroom/2F Car Room', '1F TV Room/1F Music Room', 'B Gym/B Garage'],
+        'Hereford Base': ['3F Ammo Storage/3F Tractor Storage', '2F Master Bedroom/2F Kids Room', '1F Kitchen/1F Dining Room', 'B Brewery/B Fermentation Chamber'],
+        'Kanal': ['2F Radar Room/2F Server Room', '1F Map Room/1F Security Room', '1F Coast Guard Meeting Room/1F Lounge', 'B1 Supply Room/B1 Kayaks'],
+        'Fortress': ['2F Commander\'s Office/2F Bedroom', '2F Dormitory/2F Briefing Room', '1F Kitchen/1F Cafeteria', '1F Hammam/1F Sitting Room'],
+        'Outback': ['2F Laundry/2F Piano Room', '2F Party Room/2F Office', '1F Green Bedroom/1F Red Bedroom', '1F Mechanic Shop/1F Kitchen'],
+        'Tower': ['2F Lantern Room/2F Gift Shop', '2F Media Center/2F Exhibit Room', '1F Tea Room/1F Bar', '1F Restaurant/1F Bird Room'],
+        'Presidential Plane': ['2F Executive Office/2F Meeting Room', '2F Executive Bedroom/2F Staff Section', '1F Cargo Hold/1F Luggage Hold'],
+        'Theme Park': ['2F Initiation Room/2F Office', '2F Bunk/2F Day Care', '1F Armory/1F Throne Room', '1F Lab/1F Storage'],
+        'Skyscraper': ['2F Karaoke/2F Tea Room', '2F Exhibition Room/2F Office', '1F BBQ/1F Kitchen', '1F Bathroom/1F Bedroom'],
+        'Emerald Plains': ['2F Administration/2F CEO Office', '2F Private Gallery/2F Meeting', '1F Bar/1F Lounge', '1F Dining/1F Kitchen'],
+        'Stadium Bravo': ['2F Armory Lockers/2F Archives', '2F Penthouse/2F VIP Lounge', '1F Showers/1F Server', '1F Service/1F Kitchen'],
+        'Nighthaven Labs': ['2F Command Center/2F Servers', '1F Kitchen/1F Cafeteria', '1F Control Room/1F Storage', 'B Tank/B Assembly']
+    }
 
 class RainbowMatch:
     def __init__(self, existingMatch=None):
         if existingMatch:
+            self.matchId = existingMatch['matchId']
             self.bannedOperators = existingMatch['bannedOperators']
             self.map = existingMatch['map']
             self.sites = existingMatch['sites']
             self.playingOnSide = existingMatch['playingOnSide']
-            self.currSite = existingMatch['currSite']
             self.currRound = existingMatch['currRound']
+            self.rounds = existingMatch['rounds']
             self.scores = existingMatch['scores']
-            self.reshuffles = existingMatch['reshuffles']
             self.players = existingMatch['players']
             self.playersString = existingMatch['playersString']
+            self.playerStats = existingMatch['playerStats']
         else:
+            self.matchId = str(uuid.uuid4())
             self.bannedOperators = []
             self.map = None
             self.sites = self._resetSites()
             self.playingOnSide = None
-            self.currSite = None
             self.currRound = 0
+            self.rounds = []
             self.scores = {"blue": 0, "red": 0}
-            self.reshuffles = 0
             self.players = []
             self.playersString = ''
+            self.playerStats = []
 
     def _getOperators(self):
         """Returns a dictionary with the list of attacker and defender operators."""
         return {
-            "attackers": [
-                "Sledge", "Thatcher", "Ash", "Thermite", "Twitch", "Montagne",
-                "Glaz", "Fuze", "Blitz", "IQ", "Buck", "Blackbeard", "Capitão",
-                "Hibana", "Jackal", "Ying", "Zofia", "Dokkaebi", "Lion", "Finka",
-                "Maverick", "Nomad", "Gridlock", "Nøkk", "Amaru", "Kali", "Iana",
-                "Ace", "Zero", "Flores", "Osa", "Sens", "Grim", "Brava", "Ram"
-            ],
-            "defenders": [
-                "Smoke", "Mute", "Castle", "Pulse", "Doc", "Rook", "Kapkan",
-                "Tachanka", "Jäger", "Bandit", "Frost", "Valkyrie", "Caveira",
-                "Echo", "Mira", "Lesion", "Ela", "Vigil", "Alibi", "Maestro",
-                "Clash", "Kaid", "Mozzie", "Warden", "Goyo", "Wamai", "Oryx",
-                "Melusi", "Aruni", "Thunderbird", "Thorn", "Azami", "Solis",
-                "Fenrir", "Tubarão"
-            ]
+            "attackers": RainbowData.attackers,
+            "defenders": RainbowData.defenders
         }
     
     def _getMap(self, map):
         if map is None:
             return [None, ['FIRST', 'SECOND', 'THIRD', 'FOURTH']]
 
-        maps = {
-            'Lair': ['2F Master Office/2F R6 Room', '1F Bunks/1F Briefing', '1F Armory/1F Weapon Maintenance', 'B Lab/B Lab Support'],
-            'Club House': ['2F Bedroom/2F Gym', '2F Cash Room/2F CCTV Room', '1F Bar/1F Stage', 'B Church/B Arsenal Room'],
-            'Consulate': ['2F Consul Office/2F Meeting Room', '1F Exposition Room/1F Piano Room', 'B Servers/1F Tellers', 'B Cafeteria/B Garage'],
-            'Oregon': ['2F Kids\' Dorms/2F Dorms Main Hall', '1F Kitchen/1F Dining Hall', '1F Meeting Hall/1F Kitchen', 'B Laundry Room/B Supply Room'],
-            'Kafe Dostoyevsky': ['3F Cocktail Lounge/3F Bar', '2F Fireplace Hall/2F Mining Room', '2F Fireplace Hall/2F Reading Room', '1F Kitchen Cooking/1F Kitchen Service'],
-            'Villa': ['2F Games Room/2F Aviator Room', '2F Statuary Room/2F Trophy Room', 'B Living Room/B Library', '1F Dining Room/1F Kitchen'],
-            'Coastline': ['2F Billiards Room/2F Hookah Lounge', '2F Theater/2F Penthouse', '1F Kitchen/1F Service Entrance', '1F Blue Bar/1F Sunrise Bar'],
-            'Border': ['2F Armory Lockers/2F Archives', '1F Ventilation Room/1F Workshop', '1F Bathroom/1F Tellers', '1F Customs Inspections/1F Supply Room'],
-            'Bank': ['2F Executive Office/2F CEO Office', '1F Staff Room/1F Open Area', '1F Tellers\' Office/1F Archives', 'B Lockers/B CCTV Room'],
-            'Chalet': ['2F Master Bedroom/2F Office', '1F Bar/1F Gaming Room', '1F Kitchen/1F Dining Room', 'B Wine Cellar/B Snowmobile Garage'],
-            'Favela': ['2F Storage/2F Coin Farm', '2F Coin Farm/2F Bunks', '1F Pink Apartment/1F Pink Kitchen', '1F Blue Bedroom/1F Green Apartment'],
-            'Yacht': ['4F Cockpit/4F Maps Room', '2F Engine Control/2F Kitchen', '2F Cafeteria/2F Staff Dormitory', '1F Server Room/1F Engine Storage'],
-            'House': ['2F Car Room/2F Pink Room', '2F Master Bedroom/2F Car Room', '1F TV Room/1F Music Room', 'B Gym/B Garage'],
-            'Hereford Base': ['3F Ammo Storage/3F Tractor Storage', '2F Master Bedroom/2F Kids Room', '1F Kitchen/1F Dining Room', 'B Brewery/B Fermentation Chamber'],
-            'Kanal': ['2F Radar Room/2F Server Room', '1F Map Room/1F Security Room', '1F Coast Guard Meeting Room/1F Lounge', 'B1 Supply Room/B1 Kayaks'],
-            'Fortress': ['2F Commander\'s Office/2F Bedroom', '2F Dormitory/2F Briefing Room', '1F Kitchen/1F Cafeteria', '1F Hammam/1F Sitting Room'],
-            'Outback': ['2F Laundry/2F Piano Room', '2F Party Room/2F Office', '1F Green Bedroom/1F Red Bedroom', '1F Mechanic Shop/1F Kitchen'],
-            'Tower': ['2F Lantern Room/2F Gift Shop', '2F Media Center/2F Exhibit Room', '1F Tea Room/1F Bar', '1F Restaurant/1F Bird Room'],
-            'Presidential Plane': ['2F Executive Office/2F Meeting Room', '2F Executive Bedroom/2F Staff Section', '1F Cargo Hold/1F Luggage Hold'],
-            'Theme Park': ['2F Initiation Room/2F Office', '2F Bunk/2F Day Care', '1F Armory/1F Throne Room', '1F Lab/1F Storage'],
-            'Skyscraper': ['2F Karaoke/2F Tea Room', '2F Exhibition Room/2F Office', '1F BBQ/1F Kitchen', '1F Bathroom/1F Bedroom'],
-            'Emerald Plains': ['2F Administration/2F CEO Office', '2F Private Gallery/2F Meeting', '1F Bar/1F Lounge', '1F Dining/1F Kitchen'],
-            'Stadium Bravo': ['2F Armory Lockers/2F Archives', '2F Penthouse/2F VIP Lounge', '1F Showers/1F Server', '1F Service/1F Kitchen'],
-            'Nighthaven Labs': ['2F Command Center/2F Servers', '1F Kitchen/1F Cafeteria', '1F Control Room/1F Storage', 'B Tank/B Assembly'],
-        }
+        maps = RainbowData.maps
 
         best_match, score = process.extractOne(map, maps.keys())
         if score > 70:
@@ -176,27 +185,47 @@ class RainbowMatch:
             return False
 
         self.map = mapMapping[0]
+        if len(self._getMap(map)[1]) < len(self.sites):
+            for site in self.sites:
+                if site >= len(self._getMap(map)[1]):
+                    self.sites.remove(site)
         return True
+    
+    def setupRound(self):
+        """Starts a new round, returning the chosen operators and site."""
+        siteIndex, playedSite = self.getPlayedSite() if self.playingOnSide == "defense" else (None, None)
+        playedOperators = self.getPlayedOperators()
+        attackers, defenders = self._getOperators().values()
+
+        self.rounds.append({
+            "site": siteIndex,
+            # The 1-indexed index of the current operator, negated if it is a defender
+            "operators": [(attackers.index(op) + 1) if self.playingOnSide == "attack" else -(defenders.index(op) + 1) for op in playedOperators[:len(self.players)]],
+            "result": None
+        })
+        return playedOperators, playedSite
 
     def getPlayedSite(self):
-        """Returns a choice of site that should be played, and removes the choice from the pool."""
-        self.currSite = random.choice(self.sites)
-        return self._getMap(self.map)[1][self.currSite]
+        """Returns a choice of site that should be played."""
+        siteIndex = random.choice(self.sites)
+        return siteIndex, self._getMap(self.map)[1][siteIndex]
 
-    def getPlayedOperators(self, side):
+    def getPlayedOperators(self):
         """Returns a random list of operators for the specified side, excluding any banned operators."""
         attackers, defenders = self._getOperators().values()
-        available_operators = [op for op in (attackers if side == "attack" else defenders) if op not in self.bannedOperators]
+        available_operators = [op for op in (attackers if self.playingOnSide == "attack" else defenders) if op not in self.bannedOperators]
         return random.sample(available_operators, k=min(5, len(available_operators)))
 
     def resolveRound(self, result, overtimeSide):
         """Resolves the round, updating the scores and the side, and returns True if the match is still ongoing."""
         if result == "won":
             self.scores["blue"] += 1
+            self.rounds[-1]["result"] = 1
             if self.playingOnSide == "defense":
-                self.sites.remove(self.currSite)
+                self.sites.remove(self.rounds[-1]["site"])
         else:
             self.scores["red"] += 1
+            self.rounds[-1]["result"] = 0
 
         if self.scores["blue"] == 3 and self.scores["red"] == 3:
             self.playingOnSide = overtimeSide
@@ -220,3 +249,16 @@ class RainbowMatch:
         if self.scores["blue"] == 5 or self.scores["red"] == 5:
             return True
         return False
+
+    def addPlayerStat(self, playerId, statType):
+        """Adds a player stat to the list of player stats for this match."""
+        statTypes = ['interrogations', 'aces']
+        if statType in statTypes:
+            self.playerStats.append({
+                "playerId": playerId,
+                "statType": statType
+            })
+
+    def getPlayerStat(self, playerId, statType):
+        """Returns the number of times a player has gotten a certain stat during the current match."""
+        return len([stat for stat in self.playerStats if stat['playerId'] == playerId and stat['statType'] == statType])

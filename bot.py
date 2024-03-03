@@ -9,19 +9,102 @@ from rainbow import RainbowMatch
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_BOT_TOKEN')
+IS_DEBUG = os.getenv('IS_DEBUG') == '1'
 
 class RainbowBot(commands.Bot):
     def __init__(self):
         os.makedirs('data', exist_ok=True)
         self.conn = sqlite3.connect("data/rainbowDiscordBot.db")
         self.cursor = self.conn.cursor()
+
+        # Currently ongoing matches, one per server
         self.cursor.execute("""
-            CREATE TABLE IF NOT EXISTS matches (
-                server_id TEXT PRIMARY KEY,
+            CREATE TABLE IF NOT EXISTS ongoing_matches (
+                server_id INTEGER PRIMARY KEY,
                 match_data TEXT,
                 discord_message TEXT
             )
         """)
+
+        # Matches with their map and overall scores
+        self.cursor.execute("""
+            CREATE TABLE IF NOT EXISTS matches (
+                match_id TEXT PRIMARY KEY,
+                server_id INTEGER,
+                map TEXT,
+                result INTEGER
+            )
+        """)
+
+        # Players that have ever played in a match
+        self.cursor.execute("""
+            CREATE TABLE IF NOT EXISTS players (
+                player_id INTEGER PRIMARY KEY
+            )
+        """)
+
+        # Matches a certain player has played
+        self.cursor.execute("""
+            CREATE TABLE IF NOT EXISTS player_matches (
+                player_id INTEGER,
+                match_id TEXT,
+                PRIMARY KEY(player_id, match_id),
+                FOREIGN KEY(player_id) REFERENCES players(player_id),
+                FOREIGN KEY(match_id) REFERENCES matches(match_id)
+            )
+        """)
+
+        # Played sites and outcome for each round, 1 is win, 0 is loss
+        self.cursor.execute("""
+            CREATE TABLE IF NOT EXISTS rounds (
+                match_id TEXT,
+                round_num INTEGER,
+                site INTEGER,
+                result INTEGER,
+                PRIMARY KEY(match_id, round_num),
+                FOREIGN KEY(match_id) REFERENCES matches(match_id)
+            )
+        """)
+
+        # Operators played by a player in each round
+        self.cursor.execute("""
+            CREATE TABLE IF NOT EXISTS player_rounds (
+                player_id INTEGER,
+                match_id TEXT,
+                round_num INTEGER,
+                operator INTEGER,
+                PRIMARY KEY(player_id, match_id, round_num),
+                FOREIGN KEY(match_id) REFERENCES matches(match_id),
+                FOREIGN KEY(player_id) REFERENCES players(player_id)
+            )
+        """)
+
+        # Additional player statistics, such as Caveira interrogations, Aces etc.
+        self.cursor.execute("""
+            CREATE TABLE IF NOT EXISTS player_additional_stats (
+                player_id INTEGER,
+                stat_type INTEGER,
+                value INTEGER,
+                PRIMARY KEY(player_id, stat_type),
+                FOREIGN KEY(player_id) REFERENCES players(player_id)
+            )
+        """)
+
+        if IS_DEBUG:
+            print('DEBUG MODE: Deleting matches with no map set')
+            # Get all match ids where map is null
+            self.cursor.execute("SELECT match_id FROM matches WHERE map IS NULL")
+            match_ids = [row[0] for row in self.cursor.fetchall()]
+
+            # Delete data associated with these match ids in the other tables
+            for match_id in match_ids:
+                self.cursor.execute("DELETE FROM player_matches WHERE match_id = ?", (match_id,))
+                self.cursor.execute("DELETE FROM rounds WHERE match_id = ?", (match_id,))
+                self.cursor.execute("DELETE FROM player_rounds WHERE match_id = ?", (match_id,))
+
+            # Delete matches where map is null
+            self.cursor.execute("DELETE FROM matches WHERE map IS NULL")
+
         self.conn.commit()
 
         intents = discord.Intents.default()
@@ -36,6 +119,8 @@ class RainbowBot(commands.Bot):
             'general',
             'matchManagement',
             'ongoingMatch',
+            'trackingMatchStatistics',
+            'statistics'
         ]
         for cog in cogs_list:
             await bot.load_extension(f'cogs.{cog}')
@@ -44,7 +129,7 @@ class RainbowBot(commands.Bot):
     async def on_reaction_add(self, reaction: discord.Reaction, user: discord.User):
         """Handles reactions being added to messages."""
         ctx: commands.Context = await self.get_context(reaction.message)
-        match, discordMessage, canContinue = await self.getMatchData(ctx)
+        match, discordMessage, canContinue = await self.getMatchData(ctx, False)
 
         if discordMessage is None or discordMessage['matchMessageId'] != reaction.message.id or user == bot.user:
             return     
@@ -53,11 +138,13 @@ class RainbowBot(commands.Bot):
             return
 
         await reaction.message.remove_reaction(reaction, user)
-        if reaction.emoji == '🇼':
+
+        # During a match
+        if reaction.emoji == '🇼': # Round was won
             await self.get_cog('Ongoing Match')._won(ctx)
-        elif reaction.emoji == '🇱':
+        elif reaction.emoji == '🇱': # Round was lost
             await self.get_cog('Ongoing Match')._lost(ctx)
-        elif reaction.emoji == '⚔️':
+        elif reaction.emoji == '⚔️': # Starting (overtime) on attack
             if match.currRound == 0:
                 await self.get_cog('Ongoing Match')._startAttack(ctx)
             elif (match.currRound == 6 and match.scores["red"] == 3):
@@ -66,7 +153,7 @@ class RainbowBot(commands.Bot):
                 await self.get_cog('Ongoing Match')._lost(ctx, 'attack')
             else:
                 print('Unknown reaction/match state combination: ⚔️', match.currRound, match.scores)
-        elif reaction.emoji == '🛡️':
+        elif reaction.emoji == '🛡️': # Starting (overtime) on defense
             if match.currRound == 0:
                 await self.get_cog('Ongoing Match')._startDefense(ctx)
             elif (match.currRound == 6 and match.scores["red"] == 3):
@@ -75,22 +162,26 @@ class RainbowBot(commands.Bot):
                 await self.get_cog('Ongoing Match')._lost(ctx, 'defense')
             else:
                 print('Unknown reaction/match state combination: 🛡️', match.currRound, match.scores)
-        elif reaction.emoji == '🔁':
-            await self.get_cog('Ongoing Match')._reshuffle(ctx)
-        elif reaction.emoji == '👍':
+
+        # End of match
+        elif reaction.emoji == '👍': # Play another match with the same players
             await self.get_cog('Match Management')._another(ctx)
-        elif reaction.emoji == '🎤':
+        elif reaction.emoji == '🎤': # Play another match with players in the current voice channel
             member = reaction.message.guild.get_member(user.id)
             ctx.author = member if member.voice else ctx.author
             await self.get_cog('Match Management')._another(ctx, 'here')
-        elif reaction.emoji == '👎':
+        elif reaction.emoji == '👎': # End the session
             await self.get_cog('Match Management')._goodnight(ctx)
+
+        # Statistics
+        elif reaction.emoji == '🗡️': # Player got an interrogation
+            await self.get_cog('Tracking Match Statistics')._interrogation(ctx, user)
         else:
             print('Unknown reaction:', reaction.emoji)
             return
 
-    def resetDiscordMessage(self, serverId: str):
-        self.cursor.execute("DELETE FROM matches WHERE server_id = ?", (serverId,))
+    def resetDiscordMessage(self, serverId: int):
+        self.cursor.execute("DELETE FROM ongoing_matches WHERE server_id = ?", (serverId,))
         self.conn.commit()
         return {
             'matchMessageId': None,
@@ -100,12 +191,13 @@ class RainbowBot(commands.Bot):
                 'banMetadata': '',
                 'roundMetadata': '',
                 'roundLineup': '',
+                'statsBanner': '',
                 'actionPrompt': ''
             },
             'reactions': []
         }
 
-    async def sendMessage(self, ctx: commands.Context, discordMessage, forgetMatch=False):
+    async def sendMatchMessage(self, ctx: commands.Context, discordMessage, forgetMatch=False):
         message = '\n'.join([v for v in discordMessage['messageContent'].values() if v != ''])
 
         if discordMessage['matchMessageId']:
@@ -147,23 +239,62 @@ class RainbowBot(commands.Bot):
                 for user in users[1:]:
                     await message.remove_reaction(current, user)
     
-    def saveMatch(self, ctx: commands.Context, match):
-        serverId = str(ctx.guild.id)
+    def saveOngoingMatch(self, ctx: commands.Context, match):
+        serverId = ctx.guild.id
         matchData = json.dumps(match.__dict__)
-        self.cursor.execute("UPDATE matches SET match_data = ? WHERE server_id = ?", (matchData, serverId))
+        self.cursor.execute("UPDATE ongoing_matches SET match_data = ? WHERE server_id = ?", (matchData, serverId))
         self.conn.commit()
+
+    def saveCompletedMatch(self, ctx: commands.Context, match: RainbowMatch):
+        matchMap = match.map
+        # Proper matches will have a map name set, so we only save those to the database
+        if not IS_DEBUG and matchMap is None:
+            return
+        matchId = match.matchId
+        serverId = ctx.guild.id
+        didWin = match.scores['blue'] > match.scores['red']
+
+        self.cursor.execute("INSERT INTO matches (match_id, server_id, map, result) VALUES (?, ?, ?, ?)", (matchId, serverId, matchMap, didWin))
+        self.conn.commit()
+
+        for player in match.players:
+            self.cursor.execute("INSERT OR IGNORE INTO players (player_id) VALUES (?)", (player['id'],))
+            self.cursor.execute("INSERT INTO player_matches (player_id, match_id) VALUES (?, ?)", (player['id'], matchId))
+            self.conn.commit()
+
+        for roundNumber, round in enumerate(match.rounds):
+            site = round['site']
+            roundResult = round['result']
+            self.cursor.execute("INSERT INTO rounds (round_num, match_id, site, result) VALUES (?, ?, ?, ?)", (roundNumber, matchId, site, roundResult))
+            self.conn.commit()
+
+            for playerIndex, player in enumerate(match.players):
+                playerId = player['id']
+                operator = round['operators'][playerIndex]
+                self.cursor.execute("INSERT INTO player_rounds (player_id, match_id, round_num, operator) VALUES (?, ?, ?, ?)", (playerId, matchId, roundNumber, operator))
+                self.conn.commit()
+
+        for stat in match.playerStats:
+            playerId = stat['playerId']
+            statType = stat['statType']
+            # Increase the counter of this stat by one, or create it if it doesn't exist.
+            self.cursor.execute("""
+                INSERT OR REPLACE INTO player_additional_stats (player_id, stat_type, value)
+                VALUES (?, ?, COALESCE((SELECT value FROM player_additional_stats WHERE player_id = ? AND stat_type = ?), 0) + 1)
+            """, (playerId, statType, playerId, statType))
+            self.conn.commit()
 
     def saveDiscordMessage(self, ctx: commands.Context, discordMessage):
-        serverId = str(ctx.guild.id)
+        serverId = ctx.guild.id
         discordMessage = json.dumps(discordMessage)
-        self.cursor.execute("UPDATE matches SET discord_message = ? WHERE server_id = ?", (discordMessage, serverId))
+        self.cursor.execute("UPDATE ongoing_matches SET discord_message = ? WHERE server_id = ?", (discordMessage, serverId))
         self.conn.commit()
 
-    async def getMatchData(self, ctx: commands.Context):
-        """Gets the match data and discord message from the database. If there is no match in progress, it will return a message to the user. If there is a match in progress, it will return the match data and discord message."""
-        serverId = str(ctx.guild.id)
+    async def getMatchData(self, ctx: commands.Context, shouldAlertOnNoMatch=True):
+        """Gets the match data and discord message from the database. If there is no match in progress, it will send a message to the user."""
+        serverId = ctx.guild.id
         matchData, discordMessage = None, None
-        result = self.cursor.execute("SELECT match_data, discord_message FROM matches WHERE server_id = ?", (serverId,)).fetchone()
+        result = self.cursor.execute("SELECT match_data, discord_message FROM ongoing_matches WHERE server_id = ?", (serverId,)).fetchone()
 
         if result is not None:
             matchData, discordMessage = result
@@ -172,9 +303,9 @@ class RainbowBot(commands.Bot):
         else:
             discordMessage = self.resetDiscordMessage(ctx.guild.id)
 
-        if matchData is None:
+        if matchData is None and shouldAlertOnNoMatch:
             discordMessage['messageContent']['playersBanner'] = 'No match in progress. Use "**!startMatch @player1 @player2...**" to start a new match.'
-            await bot.sendMessage(ctx, discordMessage, True)
+            await bot.sendMatchMessage(ctx, discordMessage, True)
             return None, None, False
 
         match = RainbowMatch(matchData)

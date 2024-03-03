@@ -1,6 +1,7 @@
 .dockerignore
 .env
 .git
+.github
 .gitattributes
 .gitignore
 __pycache__

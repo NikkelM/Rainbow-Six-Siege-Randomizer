@@ -31,7 +31,23 @@ Commands to interact with an ongoing match, such as banning operators or playing
 | `!defense`, `!startDefense`, `!defend`, 🛡️ | | Starts the match on defense. |
 | `!won`, `!w` | `attack` ⚔️ or `defense` 🛡️, if winning starts overtime | Marks the current round as won and starts a new round. If winning starts overtime, you must specify the side you start overtime on with **!won attack** ⚔️ or **!won defense** 🛡️. |
 | `!lost`, `!l` | `attack` ⚔️ or `defense` 🛡️, if losing starts overtime | Marks the current round as lost and starts a new round. If losing starts overtime, you must specify the side you start overtime on with **!lost attack** ⚔️ or **!lost defense** 🛡️. |
-| `!reshuffle`, `!shuffle`, 🔁 | | Reshuffles the operator choices and site (if playing on defense) for the current round. You can reshuffle up to twice per match. |
+
+### Tracking Match Statistics
+
+Commands to track additional statistics during an ongoing match.
+
+| Command | Argument | Description |
+| ------- | -------- | ----------- |
+| `!interrogation` | A `@Player` mention (optional) | A player has interrogated someone as Caveira. If no `@Player` mention is provided, the message author is assumed to have gotten the interrogation. |
+| `!ace` | A `@Player` mention (optional) | A player has gotten an ace. If no `@Player` mention is provided, the message author is assumed to have gotten the ace. |
+
+### Statistics
+
+Commands to view statistics for players and past matches.
+
+| Command | Argument | Description |
+| ------- | -------- | ----------- |
+| `!stats` | A `statisticType` and optionally, a `@Player` mention. | View a specific statistic for yourself or another user. Available *statisticTypes* are: **overall**: General statistics for a player, such as win/loss ratios for maps and operators. **server**: The same as the **overall** statistic, but for matches played on the current server. If no *statisticType* is given, the **overall** statistics for mentioned player are displayed. If no player is mentioned, the message author's statistics are displayed. |
 
 ### General
 
@@ -64,6 +80,7 @@ Create a `.env` file and add your bot's token (which you can generate on the `Bo
 
 ```env
 DISCORD_BOT_TOKEN=your_token_here
+IS_DEBUG=1
 ```
 
 You can now run the Discord bot with the following command, which will log it in and allow you to use the commands to interact with it:
@@ -89,7 +106,7 @@ gcloud auth configure-docker
 You can then build the Docker image with the following command, make sure to replace `<TOKEN>` with your bot's token and `<projectId>` with your project's ID:
 
 ```bash
-docker build --build-arg DISCORD_BOT_TOKEN=<TOKEN> -t gcr.io/<projectId>/rainbow-six-siege-discord-bot .
+docker build --build-arg DISCORD_BOT_TOKEN=<TOKEN> IS_DEBUG=0 -t gcr.io/<projectId>/rainbow-six-siege-discord-bot .
 docker push gcr.io/<projectId>/rainbow-six-siege-discord-bot
 ```
 
@@ -151,7 +168,7 @@ gcloud auth configure-docker
 
 Docker has now been set up, and you should be authenticated with your GCP account.
 Before running the next commands, make sure to first copy the database file (`rainbowDiscordBot.db`) to the VM.
-You can create a new database file by shortly starting the bot locally and then copying out from the `data` folder.
+You can create a new database file by shortly starting the bot locally and then copying it out from the `data` folder.
 
 Then, set up a new Docker volume and copy the database file into it:
 

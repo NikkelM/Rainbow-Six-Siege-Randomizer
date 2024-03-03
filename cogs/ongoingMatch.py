@@ -27,7 +27,7 @@ class OngoingMatch(commands.Cog, name='Ongoing Match'):
 
         if len(mapName) == 0:
             discordMessage['messageContent']['actionPrompt'] = 'You must specify a map. Use "**!setMap map**" to try again.'
-            await self.bot.sendMessage(ctx, discordMessage)
+            await self.bot.sendMatchMessage(ctx, discordMessage)
             return
 
         discordMessage['messageContent']['actionPrompt'] = ''
@@ -40,16 +40,14 @@ class OngoingMatch(commands.Cog, name='Ongoing Match'):
 
         if match.currRound == 0:
             if not match.bannedOperators:
-                discordMessage['messageContent']['actionPrompt'] += 'Use "**!ban op1 op2...**" or use "**!attack**" ⚔️ or "**!defense**" 🛡️ to start the match.'
+                discordMessage['messageContent']['actionPrompt'] += 'Use "**!ban op1 op2...**", then "**!attack**" ⚔️ or "**!defense**" 🛡️ to start the match.'
             else:
                 discordMessage['messageContent']['actionPrompt'] += 'Use "**!attack**" ⚔️ or "**!defense**" 🛡️ to start the match.'
         else:
-            if match.reshuffles < 2:
-                discordMessage['messageContent']['actionPrompt'] += f'Use **!reshuffle** 🔁 to get new choices (**{2 - match.reshuffles}** remaining).\n'
             discordMessage['messageContent']['actionPrompt'] += 'Use "**!won**" 🇼 or "**!lost**" 🇱 to continue.'
 
-        self.bot.saveMatch(ctx, match)
-        await self.bot.sendMessage(ctx, discordMessage)
+        self.bot.saveOngoingMatch(ctx, match)
+        await self.bot.sendMatchMessage(ctx, discordMessage)
 
     @commands.command(aliases=['attack', 'startAttack'])
     async def _startAttack(self, ctx: commands.Context):
@@ -72,21 +70,21 @@ class OngoingMatch(commands.Cog, name='Ongoing Match'):
 
         if not match.playingOnSide:
             discordMessage['messageContent']['actionPrompt'] = 'You must specify what side you start on. Use **!attack** ⚔️ or **!defense** 🛡️.'
-            await self.bot.sendMessage(ctx, discordMessage)
+            await self.bot.sendMatchMessage(ctx, discordMessage)
             return
 
         if (match.currRound == 6 and match.scores["red"] == 3):
             if not overtimeSide or overtimeSide not in ['attack', 'defense']:
                 discordMessage['messageContent']['actionPrompt'] = 'You must specify what side you start overtime on. Use **!won attack** ⚔️ or **!won defense** 🛡️.'
-                await self.bot.sendMessage(ctx, discordMessage)
+                await self.bot.sendMatchMessage(ctx, discordMessage)
                 return
 
         if match.resolveRound('won', overtimeSide):
-            self.bot.saveMatch(ctx, match)
+            self.bot.saveOngoingMatch(ctx, match)
             self.bot.saveDiscordMessage(ctx, discordMessage)
             await self._playRound(ctx)
         else:
-            self.bot.saveMatch(ctx, match)
+            self.bot.saveOngoingMatch(ctx, match)
             self.bot.saveDiscordMessage(ctx, discordMessage)
             await self._endMatch(ctx)
 
@@ -101,46 +99,23 @@ class OngoingMatch(commands.Cog, name='Ongoing Match'):
 
         if not match.playingOnSide:
             discordMessage['messageContent']['actionPrompt'] = 'You must specify what side you start on. Use **!attack** ⚔️ or **!defense** 🛡️.'
-            await self.bot.sendMessage(ctx, discordMessage)
+            await self.bot.sendMatchMessage(ctx, discordMessage)
             return
 
         if (match.currRound == 6 and match.scores["blue"] == 3):
             if not overtimeSide or overtimeSide not in ['attack', 'defense']:
                 discordMessage['messageContent']['actionPrompt'] = 'You must specify what side you start overtime on. Use **!lost attack** ⚔️ or **!lost defense** 🛡️.'
-                await self.bot.sendMessage(ctx, discordMessage)
+                await self.bot.sendMatchMessage(ctx, discordMessage)
                 return
 
         if match.resolveRound('lost', overtimeSide):
-            self.bot.saveMatch(ctx, match)
+            self.bot.saveOngoingMatch(ctx, match)
             self.bot.saveDiscordMessage(ctx, discordMessage)
             await self._playRound(ctx)
         else:
-            self.bot.saveMatch(ctx, match)
+            self.bot.saveOngoingMatch(ctx, match)
             self.bot.saveDiscordMessage(ctx, discordMessage)
             await self._endMatch(ctx)
-
-    @commands.command(aliases=['reshuffle', 'shuffle'])
-    async def _reshuffle(self, ctx: commands.Context):
-        """Reshuffles the operator choices and site (if playing on defense) for the current round. You can reshuffle up to twice per match."""
-        match, discordMessage, canContinue = await self.bot.getMatchData(ctx)
-        if not canContinue:
-            return
-        if ctx.message.id != discordMessage['matchMessageId'] or not discordMessage['matchMessageId']:
-            await ctx.message.delete()
-
-        if match.reshuffles >= 2:
-            discordMessage['messageContent']['actionPrompt'] = 'You cannot reshuffle more than twice per match. Next time, choose more carefully!\nUse **!won** 🇼 or **!lost** 🇱 to continue.'
-            await self.bot.sendMessage(ctx, discordMessage)
-            return
-
-        if match.currRound == 0:
-            discordMessage['messageContent']['actionPrompt'] = 'You can only reshuffle the lineup after the first round has started.\nUse **!attack** ⚔️ or **!defense** 🛡️ to start the first round.'
-            await self.bot.sendMessage(ctx, discordMessage)
-            return
-
-        match.reshuffles += 1
-        self.bot.saveMatch(ctx, match)
-        await self._playRound(ctx)
 
     async def _banUnban(self, ctx: commands.Context, *operators, ban=True):
         match, discordMessage, canContinue = await self.bot.getMatchData(ctx)
@@ -172,8 +147,8 @@ class OngoingMatch(commands.Cog, name='Ongoing Match'):
         else:
             discordMessage['messageContent']['actionPrompt'] = 'Use "**!won**" 🇼 or "**!lost**" 🇱 to continue.'
 
-        self.bot.saveMatch(ctx, match)
-        await self.bot.sendMessage(ctx, discordMessage)
+        self.bot.saveOngoingMatch(ctx, match)
+        await self.bot.sendMatchMessage(ctx, discordMessage)
 
     async def _playMatch(self, ctx: commands.Context, side):
         match, discordMessage, canContinue = await self.bot.getMatchData(ctx)
@@ -184,7 +159,7 @@ class OngoingMatch(commands.Cog, name='Ongoing Match'):
 
         if match == None:
             discordMessage['messageContent']['playersBanner'] = 'No match in progress. Use "**!startMatch @player1 @player2...**" to start a new match.'
-            await self.bot.sendMessage(ctx, discordMessage, True)
+            await self.bot.sendMatchMessage(ctx, discordMessage, True)
             return
         
         discordMessage['messageContent']['playersBanner'] = f"Playing a match with {match.playersString}{' on **' + match.map + '**' if match.map else ''}.\n"
@@ -197,7 +172,7 @@ class OngoingMatch(commands.Cog, name='Ongoing Match'):
         if match.currRound == 0:
                 match.currRound = 1
 
-        self.bot.saveMatch(ctx, match)
+        self.bot.saveOngoingMatch(ctx, match)
         self.bot.saveDiscordMessage(ctx, discordMessage)
         await self._playRound(ctx)
 
@@ -209,11 +184,11 @@ class OngoingMatch(commands.Cog, name='Ongoing Match'):
         discordMessage['messageContent']['playersBanner'] = f"Playing a match with {match.playersString}{' on **' + match.map + '**' if match.map else ''}.\n"
         discordMessage['messageContent']['matchScore'] = f'The score is **{match.scores["blue"]}**:**{match.scores["red"]}**, we are playing on **{match.playingOnSide}**.\n'
         discordMessage['messageContent']['banMetadata'] = ''
+        discordMessage['messageContent']['statsBanner'] = ''
         discordMessage['messageContent']['roundMetadata'] = f'Here is your lineup for round {match.currRound}:'
 
-        operators = match.getPlayedOperators(match.playingOnSide)
+        operators, site = match.setupRound()
         if match.playingOnSide == 'defense':
-            site = match.getPlayedSite()
             discordMessage['messageContent']['roundMetadata'] += f'\nChoose the **{site}** site.'
 
         discordMessage['messageContent']['roundLineup'] = ''
@@ -226,11 +201,7 @@ class OngoingMatch(commands.Cog, name='Ongoing Match'):
             discordMessage['messageContent']['roundLineup'] += f'Backup operators: **{", ".join(operators)}**\n'
 
         discordMessage['messageContent']['actionPrompt'] = ''
-        discordMessage['reactions'] = []
-
-        if match.reshuffles < 2:
-            discordMessage['messageContent']['actionPrompt'] += f'Use **!reshuffle** 🔁 to get new choices (**{2 - match.reshuffles}** remaining).\n'
-            discordMessage['reactions'] += ['🔁']
+        discordMessage['reactions'] = [] 
 
         if match.currRound != 6:
             discordMessage['messageContent']['actionPrompt'] += 'Use "**!won**" 🇼 or "**!lost**" 🇱 to continue.'
@@ -242,8 +213,12 @@ class OngoingMatch(commands.Cog, name='Ongoing Match'):
             discordMessage['messageContent']['actionPrompt'] += 'If you lost, use "**!lost attack**" ⚔️ (or "**!lost defense**" 🛡️) to start overtime on the specified side, otherwise use **!won** 🇼 to end the match.'
             discordMessage['reactions'] += ['🇼', '⚔️', '🛡️']
 
-        self.bot.saveMatch(ctx, match)
-        await self.bot.sendMessage(ctx, discordMessage)
+        # If one of the operators is Caveira, add the interrogation emoji to the message
+        if 'Caveira' in operators_copy:
+            discordMessage['reactions'] += ['🗡️']
+
+        self.bot.saveOngoingMatch(ctx, match)
+        await self.bot.sendMatchMessage(ctx, discordMessage)
 
     async def _endMatch(self, ctx: commands.Context):
         match, discordMessage, canContinue = await self.bot.getMatchData(ctx)
@@ -254,10 +229,12 @@ class OngoingMatch(commands.Cog, name='Ongoing Match'):
         discordMessage['messageContent']['roundLineup'] = ''
         discordMessage['messageContent']['playersBanner'] = f"Finished a match with {match.playersString}{' on **' + match.map + '**' if match.map else ''}.\n"
         discordMessage['messageContent']['matchScore'] = f'The match is over! The final score was **{match.scores["blue"]}**:**{match.scores["red"]}**.'
-        discordMessage['messageContent']['actionPrompt'] = 'Use "**!another**" 👍 to start a new match with the same players, **!another here** 🎤 to start a match with everyone in your voice channel, or "**!goodnight**" 👎 to end the session.'
+        discordMessage['messageContent']['statsBanner'] = ''
+        discordMessage['messageContent']['actionPrompt'] = 'Use "**!another**" 👍 to start a new match with the same players, "**!another here**" 🎤 to start a match with everyone in your voice channel, or "**!goodnight**" 👎 to end the session.'
         discordMessage['reactions'] = ['👍', '🎤', '👎']
-        self.bot.saveMatch(ctx, match)
-        await self.bot.sendMessage(ctx, discordMessage)
+        self.bot.saveOngoingMatch(ctx, match)
+        self.bot.saveCompletedMatch(ctx, match)
+        await self.bot.sendMatchMessage(ctx, discordMessage)
 
 async def setup(bot: RainbowBot):
     await bot.add_cog(OngoingMatch(bot))
