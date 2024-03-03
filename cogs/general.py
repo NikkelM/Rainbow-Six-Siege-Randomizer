@@ -18,7 +18,7 @@ class General(commands.Cog, name='General'):
             return
 
         discordMessage['matchMessageId'] = None
-        await self.bot.sendMessage(ctx, discordMessage)
+        await self.bot.sendMatchMessage(ctx, discordMessage)
 
     @commands.command(name='version')
     async def _version(self, ctx: commands.Context):

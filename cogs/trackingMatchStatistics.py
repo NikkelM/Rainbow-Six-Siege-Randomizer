@@ -23,12 +23,12 @@ class TrackingMatchStatistics(commands.Cog, name='Tracking Match Statistics'):
         if player.id not in [matchPlayer['id'] for matchPlayer in match.players]:
             discordMessage['messageContent']['statsBanner'] = f'{player.mention} is not playing in the current match, so they cannot have interrogated someone.'
         else:
-            match.addPlayerStat(player.id, 'interrogation')
-            numInterrogations = match.getPlayerStat(player.id, 'interrogation')
+            match.addPlayerStat(player.id, 'interrogations')
+            numInterrogations = match.getPlayerStat(player.id, 'interrogations')
             discordMessage['messageContent']['statsBanner'] = f'{player.mention} has interrogated someone! They have gotten {numInterrogations} interrogation{"s" if numInterrogations != 1 else ""} in this match!'
 
         self.bot.saveOngoingMatch(ctx, match)
-        await self.bot.sendMessage(ctx, discordMessage)
+        await self.bot.sendMatchMessage(ctx, discordMessage)
     
     @commands.command(aliases=['ace'])
     async def _ace(self, ctx: commands.Context, player: discord.User = None):
@@ -46,12 +46,12 @@ class TrackingMatchStatistics(commands.Cog, name='Tracking Match Statistics'):
         if player.id not in [matchPlayer['id'] for matchPlayer in match.players]:
             discordMessage['messageContent']['statsBanner'] = f'{player.mention} is not playing in the current match, so they cannot have aced the round.'
         else:
-            match.addPlayerStat(player.id, 'ace')
-            numAces = match.getPlayerStat(player.id, 'ace')
+            match.addPlayerStat(player.id, 'aces')
+            numAces = match.getPlayerStat(player.id, 'aces')
             discordMessage['messageContent']['statsBanner'] = f'{player.mention} has aced the round! They have gotten {numAces} ace{"s" if numAces != 1 else ""} in this match!'
 
         self.bot.saveOngoingMatch(ctx, match)
-        await self.bot.sendMessage(ctx, discordMessage)
+        await self.bot.sendMatchMessage(ctx, discordMessage)
 
 async def setup(bot: RainbowBot):
     await bot.add_cog(TrackingMatchStatistics(bot))
