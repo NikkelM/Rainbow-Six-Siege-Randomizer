@@ -72,7 +72,6 @@ class Statistics(commands.Cog, name='Statistics'):
                     for stat in additionalStatistics:
                         message += f'**{stat[0].title()}**: {stat[1]}\n'
         else:
-            # TODO: "Did you mean {closestMatch}?"
             message = f'The statistic you wanted to view is unknown: {statisticType}'
 
         await ctx.send(message)
@@ -117,20 +116,20 @@ class Statistics(commands.Cog, name='Statistics'):
 
     def _calculateWinLossRatio(self, maps: list):
         res = {}
-        overAllWins = 0
-        overAllLosses = 0
+        overallWins = 0
+        overallLosses = 0
         for map in maps:
-            # If the map is not in the dictionary, add it
             if map[0] not in res:
                 res[map[0]] = {'wins': 0, 'losses': 0}
             if map[1] == 1:
-                overAllWins += 1
+                overallWins += 1
                 res[map[0]]['wins'] += 1
             else:
-                overAllLosses += 1
+                overallLosses += 1
                 res[map[0]]['losses'] += 1
+        # None means no map is set, or the round was played on attack
         none = res.pop(None, None)
-        overall = {'wins': overAllWins, 'losses': overAllLosses}
+        overall = {'wins': overallWins, 'losses': overallLosses}
         return res, overall, none
     
     def _getOperatorFromId(self, operatorId: int):
