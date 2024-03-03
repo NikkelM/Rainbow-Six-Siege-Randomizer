@@ -249,3 +249,7 @@ class RainbowMatch:
                 "playerId": playerId,
                 "statType": statType
             })
+
+    def getPlayerStat(self, playerId, statType):
+        """Returns the number of times a player has gotten a certain stat during the current match ."""
+        return len([stat for stat in self.playerStats if stat['playerId'] == playerId and stat['statType'] == statType])

@@ -158,8 +158,7 @@ class RainbowBot(commands.Bot):
 
         # Statistics
         elif reaction.emoji == '🗡️': # Player got an interrogation
-            match.addPlayerStat(user.id, 'interrogation')
-            self.saveOngoingMatch(ctx, match)
+            await self.get_cog('Tracking Match Statistics')._interrogation(ctx, user)
         else:
             print('Unknown reaction:', reaction.emoji)
             return

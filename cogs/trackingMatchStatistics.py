@@ -24,8 +24,8 @@ class TrackingMatchStatistics(commands.Cog, name='Tracking Match Statistics'):
             discordMessage['messageContent']['statsBanner'] = f'{player.mention} is not playing in the current match, so they cannot have interrogated someone.'
         else:
             match.addPlayerStat(player.id, 'interrogation')
-            # TODO: Track how many interrogations in this match for this player
-            discordMessage['messageContent']['statsBanner'] = f'{player.mention} has interrogated someone!'
+            numInterrogations = match.getPlayerStat(player.id, 'interrogation')
+            discordMessage['messageContent']['statsBanner'] = f'{player.mention} has interrogated someone! They have gotten {numInterrogations} interrogation{"s" if numInterrogations != 1 else ""} in this match!'
 
         self.bot.saveOngoingMatch(ctx, match)
         await self.bot.sendMessage(ctx, discordMessage)
