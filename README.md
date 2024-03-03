@@ -72,6 +72,7 @@ Create a `.env` file and add your bot's token (which you can generate on the `Bo
 
 ```env
 DISCORD_BOT_TOKEN=your_token_here
+IS_DEBUG=1
 ```
 
 You can now run the Discord bot with the following command, which will log it in and allow you to use the commands to interact with it:
@@ -97,7 +98,7 @@ gcloud auth configure-docker
 You can then build the Docker image with the following command, make sure to replace `<TOKEN>` with your bot's token and `<projectId>` with your project's ID:
 
 ```bash
-docker build --build-arg DISCORD_BOT_TOKEN=<TOKEN> -t gcr.io/<projectId>/rainbow-six-siege-discord-bot .
+docker build --build-arg DISCORD_BOT_TOKEN=<TOKEN> IS_DEBUG=0 -t gcr.io/<projectId>/rainbow-six-siege-discord-bot .
 docker push gcr.io/<projectId>/rainbow-six-siege-discord-bot
 ```
 
