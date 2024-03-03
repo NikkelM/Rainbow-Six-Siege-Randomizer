@@ -13,7 +13,7 @@ class Statistics(commands.Cog, name='Statistics'):
         """View a specific statistic for yourself or another user. Available *statisticTypes* are:
         **overall**: General statistics for a player, such as win/loss ratios for maps and operators.
         **server**: The same as the **overall** statistic, but for matches played on the current server.
-        If no *statisticType* is given, the overall statistics for the message author are displayed.
+        If no *statisticType* is given, the **overall** statistics for the mentioned player are displayed.
         If no player is mentioned, the message author's statistics are displayed.
         """
         # No arguments given

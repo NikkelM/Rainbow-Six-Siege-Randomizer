@@ -41,6 +41,14 @@ Commands to track additional statistics during an ongoing match.
 | `!interrogation` | A `@Player` mention (optional) | A player has interrogated someone as Caveira. If no `@Player` mention is provided, the message author is assumed to have gotten the interrogation. |
 | `!ace` | A `@Player` mention (optional) | A player has gotten an ace. If no `@Player` mention is provided, the message author is assumed to have gotten the ace. |
 
+### Statistics
+
+Commands to view statistics for players and past matches.
+
+| Command | Argument | Description |
+| ------- | -------- | ----------- |
+| `!stats` | A `statisticType` and optionally, a `@Player` mention. | View a specific statistic for yourself or another user. Available *statisticTypes* are: **overall**: General statistics for a player, such as win/loss ratios for maps and operators. **server**: The same as the **overall** statistic, but for matches played on the current server. If no *statisticType* is given, the **overall** statistics for mentioned player are displayed. If no player is mentioned, the message author's statistics are displayed. |
+
 ### General
 
 Commands that allow you to manage the bot itself.
