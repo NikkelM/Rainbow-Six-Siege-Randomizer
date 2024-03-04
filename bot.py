@@ -11,6 +11,9 @@ load_dotenv()
 TOKEN = os.getenv('DISCORD_BOT_TOKEN')
 IS_DEBUG = os.getenv('IS_DEBUG') == '1'
 
+if IS_DEBUG:
+    print('DEBUG MODE: Running in debug mode')
+
 class RainbowBot(commands.Bot):
     def __init__(self):
         os.makedirs('data', exist_ok=True)
