@@ -11,6 +11,9 @@ load_dotenv()
 TOKEN = os.getenv('DISCORD_BOT_TOKEN')
 IS_DEBUG = os.getenv('IS_DEBUG') == '1'
 
+if IS_DEBUG:
+    print('DEBUG MODE: Running in debug mode')
+
 class RainbowBot(commands.Bot):
     def __init__(self):
         os.makedirs('data', exist_ok=True)
@@ -124,7 +127,11 @@ class RainbowBot(commands.Bot):
         ]
         for cog in cogs_list:
             await bot.load_extension(f'cogs.{cog}')
-        await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.playing, name='!startMatch here | !help'))
+
+        if IS_DEBUG:
+            await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.playing, name='the development build'))
+        else:
+            await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.playing, name='!startMatch here | !help'))
 
     async def on_reaction_add(self, reaction: discord.Reaction, user: discord.User):
         """Handles reactions being added to messages."""

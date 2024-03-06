@@ -10,12 +10,7 @@ class Statistics(commands.Cog, name='Statistics'):
 
     @commands.command(aliases=['stats', 'statistics'])
     async def _stats(self, ctx: commands.Context, statisticType: str = None, player: discord.User = None):
-        """View a specific statistic for yourself or another user. Available *statisticTypes* are:
-        **overall**: General statistics for a player, such as win/loss ratios for maps and operators.
-        **server**: The same as the **overall** statistic, but for matches played on the current server.
-        If no *statisticType* is given, the **overall** statistics for the mentioned player are displayed.
-        If no player is mentioned, the message author's statistics are displayed.
-        """
+        """View a specific statistic for yourself or another user. Use **!stats help** for more information."""
         # No arguments given
         if statisticType is None:
             statisticType = 'overall'
@@ -58,6 +53,13 @@ class Statistics(commands.Cog, name='Statistics'):
                 message += '\nSome additional statistics:\n'
                 for stat in additionalStatistics:
                     message += f'**{stat[0].title()}**: {stat[1]}\n'
+        elif statisticType == 'help':
+            message = 'The **!stats** command allows you to query and view statistics for yourself, your server, or another user on this server.\n\n'
+            message += 'Available *statisticTypes* are:\n'
+            message += '**overall**: General statistics for a player, such as win/loss ratios for maps and operators.\n'
+            message += '**server**: The same as the **overall** statistic, but for matches played on the current server.\n'
+            message += 'If no *statisticType* is given, the **overall** statistics for the mentioned player are displayed.\n'
+            message += 'If no player is mentioned, the message author\'s statistics are displayed.'
         else:
             message = f'The statistic you wanted to view is unknown: {statisticType}'
 
