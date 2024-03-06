@@ -177,6 +177,18 @@ class RainbowMatch:
                     self.bannedOperators.remove(op)
 
         return sanitized_names
+    
+    def swapOperator(self, player, newOperator):
+        """Swaps the operator a given player is playing in the current round. The player and new operator are assumed to have been validated already."""
+        attackers, defenders = self._getOperators().values()
+        playerIndex = next((i for i, p in enumerate(self.players) if p['id'] == player.id), None)
+
+        if newOperator in attackers:
+            self.rounds[-1]["operators"][playerIndex] = attackers.index(newOperator) + 1
+        else:
+            self.rounds[-1]["operators"][playerIndex] = -(defenders.index(newOperator) + 1)
+
+        return [attackers[abs(op) - 1] if op > 0 else defenders[abs(op) - 1] for op in self.rounds[-1]["operators"]], self.rounds[-1]["backupOperators"]
 
     def setMap(self, map):
         """Sets the map for the current match. Returns True if the map has been set successfully."""
@@ -201,6 +213,7 @@ class RainbowMatch:
             "site": siteIndex,
             # The 1-indexed index of the current operator, negated if it is a defender
             "operators": [(attackers.index(op) + 1) if self.playingOnSide == "attack" else -(defenders.index(op) + 1) for op in playedOperators[:len(self.players)]],
+            "backupOperators": playedOperators[len(self.players):],
             "result": None
         })
         return playedOperators, playedSite
@@ -218,6 +231,8 @@ class RainbowMatch:
 
     def resolveRound(self, result, overtimeSide):
         """Resolves the round, updating the scores and the side, and returns True if the match is still ongoing."""
+        self.rounds[-1].pop("backupOperators")
+
         if result == "won":
             self.scores["blue"] += 1
             self.rounds[-1]["result"] = 1
