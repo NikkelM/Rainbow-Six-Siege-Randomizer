@@ -31,6 +31,7 @@ Commands to interact with an ongoing match, such as banning operators or playing
 | `!defense`, `!startDefense`, `!defend`, 🛡️ | | Starts the match on defense. |
 | `!won`, `!w` | `attack` ⚔️ or `defense` 🛡️, if winning starts overtime | Marks the current round as won and starts a new round. If winning starts overtime, you must specify the side you start overtime on with **!won attack** ⚔️ or **!won defense** 🛡️. |
 | `!lost`, `!l` | `attack` ⚔️ or `defense` 🛡️, if losing starts overtime | Marks the current round as lost and starts a new round. If losing starts overtime, you must specify the side you start overtime on with **!lost attack** ⚔️ or **!lost defense** 🛡️. |
+| `!swap`, `!switch` | A `@Player` mention (optional) and a valid operator name | Swaps the operator the given player is playing in the current round with the given operator. If no `@Player` mention is given, the message author is assumed to be switching to the given operator. |
 
 ### Tracking Match Statistics
 
