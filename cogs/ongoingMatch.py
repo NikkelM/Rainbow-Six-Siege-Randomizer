@@ -1,7 +1,7 @@
 from discord.ext import commands
 from fuzzywuzzy import process
 from bot import RainbowBot
-from rainbow import RainbowData
+from rainbow import RainbowData, RainbowMatch
 
 class OngoingMatch(commands.Cog, name='Ongoing Match'):
     """Commands to interact with an ongoing match, such as banning operators or playing rounds."""
@@ -239,9 +239,7 @@ class OngoingMatch(commands.Cog, name='Ongoing Match'):
             discordMessage['messageContent']['roundMetadata'] += f'\nChoose the **{site}** site.'
 
         discordMessage['messageContent']['actionPrompt'] = ''
-        discordMessage['reactions'] = [] 
-
-        discordMessage = self._setRoundLineup(discordMessage, match, operators)
+        discordMessage['reactions'] = []
 
         if match.currRound != 6:
             discordMessage['messageContent']['actionPrompt'] += 'Use "**!won**" 🇼 or "**!lost**" 🇱 to continue.'
@@ -252,6 +250,8 @@ class OngoingMatch(commands.Cog, name='Ongoing Match'):
         elif match.scores["blue"] == 3:
             discordMessage['messageContent']['actionPrompt'] += 'If you lost, use "**!lost attack**" ⚔️ (or "**!lost defense**" 🛡️) to start overtime on the specified side, otherwise use **!won** 🇼 to end the match.'
             discordMessage['reactions'] += ['🇼', '⚔️', '🛡️']
+
+        discordMessage = self._setRoundLineup(discordMessage, match, operators)
 
         self.bot.saveOngoingMatch(ctx, match)
         await self.bot.sendMatchMessage(ctx, discordMessage)
@@ -272,8 +272,9 @@ class OngoingMatch(commands.Cog, name='Ongoing Match'):
         self.bot.saveCompletedMatch(ctx, match)
         await self.bot.sendMatchMessage(ctx, discordMessage)
     
-    def _setRoundLineup(self, discordMessage, match, operators: list, backupOperators: list = None):
+    def _setRoundLineup(self, discordMessage, match: RainbowMatch, operators: list, backupOperators: list = None):
         operatorsCopy = operators.copy()
+
         discordMessage['messageContent']['roundLineup'] = ''
         for player, operator in zip(match.players, operatorsCopy):
             discordMessage['messageContent']['roundLineup'] += f'{player["mention"]} plays **{operator}**\n'
@@ -286,7 +287,7 @@ class OngoingMatch(commands.Cog, name='Ongoing Match'):
             discordMessage['messageContent']['roundLineup'] += f'Backup operators: **{", ".join(backupOperators)}**. Use **!swap** to switch operator.\n'
 
         # If one of the operators is Caveira, add the interrogation emoji to the message
-        if 'Caveira' in operatorsCopy:
+        if 'Caveira' in operatorsCopy and '🗡️' not in discordMessage['reactions']:
             discordMessage['reactions'] += ['🗡️']
         
         return discordMessage
