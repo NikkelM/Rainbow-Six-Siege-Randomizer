@@ -6,6 +6,7 @@ import sqlite3
 from discord.ext import commands
 from dotenv import load_dotenv
 from rainbow import RainbowMatch
+from version import __version__ as VERSION
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_BOT_TOKEN')
@@ -13,6 +14,8 @@ IS_DEBUG = os.getenv('IS_DEBUG') == '1'
 
 if IS_DEBUG:
     print('DEBUG MODE: Running in debug mode')
+
+print(f'Running RandomSixBot v{VERSION}')
 
 class RainbowBot(commands.Bot):
     def __init__(self):
