@@ -10,7 +10,7 @@ class RainbowData:
         "Sledge", "Thatcher", "Ash", "Thermite", "Twitch", "Montagne", "Glaz", "Fuze", "Blitz", "IQ",
         "Buck", "Blackbeard", "Capitão", "Hibana", "Jackal", "Ying", "Zofia", "Dokkaebi", "Lion", "Finka",
         "Maverick", "Nomad", "Gridlock", "Nøkk", "Amaru", "Kali", "Iana", "Ace", "Zero", "Flores",
-        "Osa", "Sens", "Grim", "Brava", "Ram"
+        "Osa", "Sens", "Grim", "Brava", "Ram", "Deimos"
     ]
 
     defenders = [
