@@ -17,6 +17,9 @@ class General(commands.Cog, name='General'):
         if not canContinue:
             return
 
+        message = await ctx.channel.fetch_message(discordMessage['matchMessageId'])
+        await message.delete()
+
         discordMessage['matchMessageId'] = None
         await self.bot.sendMatchMessage(ctx, discordMessage)
 
