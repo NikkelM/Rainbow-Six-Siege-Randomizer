@@ -73,7 +73,7 @@ class MatchManagement(commands.Cog, name='Match Management'):
         discordMessage['messageContent']['banMetadata'] += f'Attack:    **{att1}** or if banned **{att2}**\n'
         discordMessage['messageContent']['banMetadata'] += f'Defense: **{def1}** or if banned **{def2}**\n'
 
-        discordMessage['messageContent']['actionPrompt'] = 'Next, use "**!setMap map**" and "**!ban op1 op2...**", then start playing with **!attack** ⚔️ or **!defense** 🛡️.'
+        discordMessage['messageContent']['actionPrompt'] = 'Next, use "**!setMap map**" and "**!ban op1 op2...**", then start playing with "**!attack**" ⚔️ or "**!defense**" 🛡️.'
         discordMessage['reactions'] = ['⚔️', '🛡️']
 
         self.bot.saveOngoingMatch(ctx, match)
@@ -87,9 +87,14 @@ class MatchManagement(commands.Cog, name='Match Management'):
             return
         if ctx.message.id != discordMessage['matchMessageId'] or not discordMessage['matchMessageId']:
             await ctx.message.delete()
+        
+        if match.currRound > 0:
+            discordMessage['messageContent']['playersBanner'] = f'You cannot add players to a match that has already started. Use "**!another @player1 @player2...**" to start a new match.\nCurrent players are {match.playersString}{", playing on **" + match.map + "**" if match.map else ""}.\n'
+            await self.bot.sendMatchMessage(ctx, discordMessage)
+            return
 
         if len(playerNames) + len(match.players) > 5:
-            discordMessage['messageContent']['playersBanner'] = f"A match can only have up to **five** players! **!removePlayers** first if you need to. Current players are {match.playersString}{', playing on **' + match.map + '**' if match.map else ''}.\n"
+            discordMessage['messageContent']['playersBanner'] = f'A match can only have up to **five** players! "**!removePlayers @player1 @player2...**" first if you need to. Current players are {match.playersString}{", playing on **" + match.map + "**" if match.map else ""}.\n'
             await self.bot.sendMatchMessage(ctx, discordMessage)
             return
         elif len(playerNames) > 0:
@@ -117,6 +122,11 @@ class MatchManagement(commands.Cog, name='Match Management'):
             return
         if ctx.message.id != discordMessage['matchMessageId'] or not discordMessage['matchMessageId']:
             await ctx.message.delete()
+
+        if match.currRound > 0:
+            discordMessage['messageContent']['playersBanner'] = f'You cannot remove players from a match that has already started. Use "**!another @player1 @player2...**" to start a new match.\nCurrent players are {match.playersString}{", playing on **" + match.map + "**" if match.map else ""}.\n'
+            await self.bot.sendMatchMessage(ctx, discordMessage)
+            return
 
         if len(playerNames) > 0:
             playerObjects = self._validatePlayerNames(ctx, playerNames)
@@ -187,7 +197,7 @@ class MatchManagement(commands.Cog, name='Match Management'):
         discordMessage['messageContent']['roundLineup'] = ''
         discordMessage['messageContent']['banMetadata'] = ''
         discordMessage['messageContent']['statsBanner'] = ''
-        discordMessage['messageContent']['actionPrompt'] = 'Use **!startMatch** to start a new match.'
+        discordMessage['messageContent']['actionPrompt'] = 'Use "**!startMatch**" to start a new match.'
         discordMessage['reactions'] = []
 
         if delete == 'delete':
