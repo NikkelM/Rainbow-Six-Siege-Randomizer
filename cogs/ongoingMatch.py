@@ -266,7 +266,7 @@ class OngoingMatch(commands.Cog, name='Ongoing Match'):
         discordMessage['messageContent']['playersBanner'] = f"Finished a match with {match.playersString}{' on **' + match.map + '**' if match.map else ''}.\n"
         discordMessage['messageContent']['matchScore'] = f'The match is over! The final score was **{match.scores["blue"]}**:**{match.scores["red"]}**.\n'
         discordMessage['messageContent']['statsBanner'] = ''
-        discordMessage['messageContent']['actionPrompt'] = 'Use "**!another**" 👍 for a new match with the same players, "**!another here**" 🎤 for a new match in your voice channel, "**!goodnight**" 👎 to end the session, or "**!goodnight delete**" ✋ to end the match and exclude it from the statistics.'
+        discordMessage['messageContent']['actionPrompt'] = 'Use "**!another**" 👍 for a new match with the same players, "**!another here**" 🎤 for a new match in your voice channel, or "**!goodnight (delete)**" 👎 (✋) to end the match (and exclude it from statistics).'
         discordMessage['reactions'] = ['👍', '🎤', '👎', '✋']
         self.bot.saveOngoingMatch(ctx, match)
         self.bot.saveCompletedMatch(ctx, match)

@@ -11,17 +11,23 @@ class MatchManagement(commands.Cog, name='Match Management'):
 
     @commands.command(aliases=['startMatch', 'start', 'play'], category='Rainbow Six')
     async def _startMatch(self, ctx: commands.Context, *playerNamesOrHere):
-        """Starts a new match with up to five players. Use **!startMatch here** to start a match with everyone in your current voice channel, or **!startMatch @player1 @player2...** to start a match with the mentioned players. This command must be used before in order for any other match commands to work."""
+        """Starts a new match with up to five players. Use **!startMatch here** to start a match with everyone in your current voice channel, or **!startMatch @player1 @player2...** to start a match with the mentioned players. This command must be used first in order for any other match commands to work."""
         serverId = ctx.guild.id
         matchData = self.bot.cursor.execute("SELECT match_data FROM ongoing_matches WHERE server_id = ?", (serverId,)).fetchone()
 
         if matchData is not None and matchData[0] is not None:
-            await ctx.message.delete()
+            oldMatch = RainbowMatch(json.loads(matchData[0]))
             discordMessage = self.bot.cursor.execute("SELECT discord_message FROM ongoing_matches WHERE server_id = ?", (serverId,)).fetchone()[0]
             discordMessage = json.loads(discordMessage)
-            discordMessage['messageContent']['actionPrompt'] = 'A match is already in progress. Use "**!another**" to start a new match with the same players, "**!another here**" to start a match with everyone in your voice channel, or "**!goodnight**" to end the session.'
-            await self.bot.sendMatchMessage(ctx, discordMessage)
-            return
+            if not oldMatch.isMatchFinished():
+                await ctx.message.delete()
+                previousActionPrompt = discordMessage['messageContent']['actionPrompt']
+                discordMessage['messageContent']['actionPrompt'] = 'A match is already in progress. Use "**!another**" to start a new match with the same players, "**!another here**" to start a match with everyone in your voice channel, or "**!goodnight**" to end the match.\n' if '!another' not in discordMessage['messageContent']['actionPrompt'] else ''
+                discordMessage['messageContent']['actionPrompt'] += previousActionPrompt
+                await self.bot.sendMatchMessage(ctx, discordMessage)
+                return
+            else:
+                await self._goodnight(ctx)
 
         match = RainbowMatch()
         discordMessage = self.bot.resetDiscordMessage(ctx.guild.id)
@@ -164,7 +170,7 @@ class MatchManagement(commands.Cog, name='Match Management'):
 
     @commands.command(aliases=['goodnight', 'bye', 'goodbye'])
     async def _goodnight(self, ctx: commands.Context, delete: str = ''):
-        """Ends the current match and/or session. Use \"delete\" as an argument to remove the match data from the database."""
+        """Ends the current match. Use \"delete\" as an argument to remove the match data from the database."""
         match, discordMessage, canContinue = await self.bot.getMatchData(ctx)
         if not canContinue:
             return
