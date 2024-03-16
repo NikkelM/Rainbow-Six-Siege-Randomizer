@@ -1,6 +1,6 @@
 from discord.ext import commands
 from bot import RainbowBot
-from botHelp import CustomHelpCommand
+from cogs.botHelp import CustomHelpCommand
 from version import __version__ as VERSION
 
 class General(commands.Cog, name='General'):

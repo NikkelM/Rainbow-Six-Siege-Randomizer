@@ -122,11 +122,11 @@ class RainbowBot(commands.Bot):
     async def on_ready(self):
         print(f'Logged in as {bot.user}')
         cogs_list = [
-            'general',
             'matchManagement',
             'ongoingMatch',
             'trackingMatchStatistics',
-            'statistics'
+            'statistics',
+            'general'
         ]
         for cog in cogs_list:
             await bot.load_extension(f'cogs.{cog}')
