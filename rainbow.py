@@ -26,7 +26,7 @@ class RainbowData:
         'Consulate': ['2F Consul Office/2F Meeting Room', '1F Exposition Room/1F Piano Room', 'B Servers/1F Tellers', 'B Cafeteria/B Garage'],
         'Oregon': ['2F Kids\' Dorms/2F Dorms Main Hall', '1F Kitchen/1F Dining Hall', '1F Meeting Hall/1F Kitchen', 'B Laundry Room/B Supply Room'],
         'Kafe Dostoyevsky': ['3F Cocktail Lounge/3F Bar', '2F Fireplace Hall/2F Mining Room', '2F Fireplace Hall/2F Reading Room', '1F Kitchen Cooking/1F Kitchen Service'],
-        'Villa': ['2F Games Room/2F Aviator Room', '2F Statuary Room/2F Trophy Room', 'B Living Room/B Library', '1F Dining Room/1F Kitchen'],
+        'Villa': ['2F Games Room/2F Aviator Room', '2F Statuary Room/2F Trophy Room', '1F Living Room/1F Library', '1F Dining Room/1F Kitchen'],
         'Coastline': ['2F Billiards Room/2F Hookah Lounge', '2F Theater/2F Penthouse', '1F Kitchen/1F Service Entrance', '1F Blue Bar/1F Sunrise Bar'],
         'Border': ['2F Armory Lockers/2F Archives', '1F Ventilation Room/1F Workshop', '1F Bathroom/1F Tellers', '1F Customs Inspections/1F Supply Room'],
         'Bank': ['2F Executive Office/2F CEO Office', '1F Staff Room/1F Open Area', '1F Tellers\' Office/1F Archives', 'B Lockers/B CCTV Room'],
