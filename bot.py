@@ -213,8 +213,26 @@ class RainbowBot(commands.Bot):
         message = '\n'.join([v for v in discordMessage['messageContent'].values() if v != ''])
 
         if discordMessage['matchMessageId']:
+            recentMessages = [message async for message in ctx.channel.history(limit=7)]
             matchMessage = await ctx.channel.fetch_message(discordMessage['matchMessageId'])
-            await matchMessage.edit(content=message)
+
+            if matchMessage in recentMessages:
+                numLinesInRecentMessages = 0
+                for recentMessage in recentMessages:
+                    if recentMessage.id == matchMessage.id:
+                        break
+                    numLinesInRecentMessages += len(recentMessage.content.split('\n'))
+
+                if numLinesInRecentMessages < 12:
+                    await matchMessage.edit(content=message)
+                else:
+                    await matchMessage.delete()
+                    matchMessage = (await ctx.send(message))
+                    discordMessage['matchMessageId'] = matchMessage.id
+            else:
+                await matchMessage.delete()
+                matchMessage = (await ctx.send(message))
+                discordMessage['matchMessageId'] = matchMessage.id
         else:
             matchMessage = (await ctx.send(message))
             discordMessage['matchMessageId'] = matchMessage.id

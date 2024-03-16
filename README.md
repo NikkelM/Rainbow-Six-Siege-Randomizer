@@ -73,8 +73,9 @@ Then, create a Discord bot. You can follow the [discord.py documentation](https:
 The bot needs the `Server Members` and `Messages` intents to work properly, and the following permissions (to be configured under `OAuth2` -> `URL Generator` -> `bot`):
 
 - Read Messages/View Channels
+- Read Message History
 - Send Messages
-- Manage Messages
+- Manage Messages (to remove messages that contain commands for the bot, and declutter the chat)
 
 After selecting the given intents and permissions, an invite link is generated that you can use to add the bot to your server.
 
