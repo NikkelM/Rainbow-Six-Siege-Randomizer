@@ -37,10 +37,11 @@ class OngoingMatch(commands.Cog, name='Ongoing Match'):
         couldSetMap = match.setMap(mapName)
         if couldSetMap:
             discordMessage['messageContent']['playersBanner'] = f"Playing a match with {match.playersString}{' on **' + match.map + '**' if match.map else ''}.\n"
-            
-            site = match.getCurrentSiteName()
-            discordMessage['messageContent']['roundMetadata'] = f'Here is your lineup for round {match.currRound}:'
-            discordMessage['messageContent']['roundMetadata'] += f'\nChoose the **{site}** site.'
+
+            if match.currRound > 0:
+                site = match.getCurrentSiteName()
+                discordMessage['messageContent']['roundMetadata'] = f'Here is your lineup for round {match.currRound}:'
+                discordMessage['messageContent']['roundMetadata'] += f'\nChoose the **{site}** site.'
         else:
             discordMessage['messageContent']['actionPrompt'] += f'**{mapName}** is not a valid map. Use "**!setMap map**" to try again.\n'
 
@@ -162,7 +163,7 @@ class OngoingMatch(commands.Cog, name='Ongoing Match'):
         await self.bot.sendMatchMessage(ctx, discordMessage)
 
     @commands.command(aliases=['swapSite', 'site'])
-    async def _site(self, ctx: commands.Context, siteNumber: str = None):
+    async def _swapSite(self, ctx: commands.Context, siteNumber: str = None):
         """Changes the site the round is played on, if playing on defense. Only sites that have not been won yet can be switched to. Use **!site <siteNumber>** to change the site for the current round."""
         match, discordMessage, canContinue = await self.bot.getMatchData(ctx)
         if not canContinue:
