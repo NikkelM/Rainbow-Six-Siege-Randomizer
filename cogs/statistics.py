@@ -9,7 +9,7 @@ class Statistics(commands.Cog, name='Statistics'):
         self.bot = bot
 
     @commands.command(aliases=['stats', 'statistics'])
-    async def _stats(self, ctx: commands.Context, statisticType: str = None, player: discord.User = None):
+    async def _stats(self, ctx: commands.Context, statisticType: str = None, player = None):
         """View a specific statistic for yourself or another user. Use **!stats help** for more information."""
         # No arguments given
         if statisticType is None:

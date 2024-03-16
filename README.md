@@ -31,7 +31,7 @@ Commands to interact with an ongoing match, such as banning operators or playing
 | `!defense`, `!startDefense`, `!defend`, 🛡️ | | Starts the match on defense. |
 | `!won`, `!w` | `attack` ⚔️ or `defense` 🛡️, if winning starts overtime | Marks the current round as won and starts a new round. If winning starts overtime, you must specify the side you start overtime on with **!won attack** ⚔️ or **!won defense** 🛡️. |
 | `!lost`, `!l` | `attack` ⚔️ or `defense` 🛡️, if losing starts overtime | Marks the current round as lost and starts a new round. If losing starts overtime, you must specify the side you start overtime on with **!lost attack** ⚔️ or **!lost defense** 🛡️. |
-| `!swap`, `!switch` | A `@Player` mention (optional) and a valid operator name | Swaps the operator the given player is playing in the current round with the given operator. If no `@Player` mention is given, the message author is assumed to be switching to the given operator. |
+| `!swap`, `!switch` | A valid operator name and a `@Player` mention (optional). | Swaps the operator a player is playing for another. Use **!swap operator** to swap the operator you are playing, or **!swap operator @player** to swap the operator another player is playing. |
 | `!swapSite`, `!site` | A site number between 1 and 4 | Changes the site the round is played on, if playing on defense. Only sites that have not been won yet can be switched to. Use **!site <siteNumber>** to change the site for the current round. |
 
 ### Tracking Match Statistics

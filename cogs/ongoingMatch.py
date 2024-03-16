@@ -120,8 +120,8 @@ class OngoingMatch(commands.Cog, name='Ongoing Match'):
             await self._endMatch(ctx)
 
     @commands.command(aliases=['swap', 'switch'])
-    async def _swap(self, ctx: commands.Context, player, operator = None):
-        """Swaps the operator a player is playing for another. Use **!swap operator** to swap the operator you are playing, or **!swap @player operator** to swap the operator another player is playing."""
+    async def _swap(self, ctx: commands.Context, operator, player = None):
+        """Swaps the operator a player is playing for another. Use **!swap operator** to swap the operator you are playing, or **!swap operator @player** to swap the operator another player is playing."""
         match, discordMessage, canContinue = await self.bot.getMatchData(ctx)
         if not canContinue:
             return
@@ -135,25 +135,16 @@ class OngoingMatch(commands.Cog, name='Ongoing Match'):
         
         validOperators = RainbowData.attackers if match.playingOnSide == 'attack' else RainbowData.defenders
 
-        # No arguments given
-        if player is None:
-            discordMessage['messageContent']['statsBanner'] = 'You must include the operator you are swapping to. Use **!swap operator** to try again. Use **!swap @player operator** to swap another player\'s operator.'
-        # Only one argument given, it has to be an operator
         if operator is None:
-            operator = player
+            discordMessage['messageContent']['statsBanner'] = 'You must include the operator you are swapping to. Use **!swap operator** or **!swap operator @player** to try again.'
+        if player is None:
             player = ctx.author
-            if not isinstance(operator, str):
-                discordMessage['messageContent']['statsBanner'] = f'**{operator}** is not a valid operator. Use **!swap operator** to try again. Use **!swap @player operator** to swap another player\'s operator.'
-                await self.bot.sendMatchMessage(ctx, discordMessage)
-                return
-        else:
-            player = await commands.MemberConverter().convert(ctx, player)
 
         operatorMatch, score = process.extractOne(operator, validOperators)
         if score >= 75:
             operator = operatorMatch
         else:
-            discordMessage['messageContent']['statsBanner'] = f'**{operator}** is not a valid operator. Use **!swap @player operator** to try again.'
+            discordMessage['messageContent']['statsBanner'] = f'**{operator}** is not a valid operator. Use **!swap operator** or **!swap operator @player** to try again.'
             await self.bot.sendMatchMessage(ctx, discordMessage)
             return
 
