@@ -16,7 +16,7 @@ Commands related to setting up matches and managing players.
 | `!addPlayers`, `!addPlayer` | List of `@Player` mentions | Adds additional players to the match. Use **!addPlayers @player1 @player2...** to add the mentioned players to the match. The total number of players cannot exceed five, use **!removePlayers** first if you need to. |
 | `!removePlayers`, `!removePlayer` | List of `@Player` mentions | Removes players from the match. Use **!removePlayers @player1 @player2...** to remove the mentioned players from the match. At least one player must remain in the match. |
 | `!another`, `!again`, 👍 | `here` 🎤 | Starts a new match with the same players as the previous one, or with everyone in the current voice channel if the `here` argument was provided. |
-| `!goodnight`, `!bye`, 👎 | | Ends the current match and/or session. |
+| `!goodnight`, `!bye`, 👎 | `delete` ✋ | Ends the current match. Use the `delete` argument to delete the match from the database (i.e. if there were blatant cheaters and you do not want the data to skew statistics). |
 
 ### Ongoing Match
 
