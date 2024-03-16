@@ -73,7 +73,7 @@ class MatchManagement(commands.Cog, name='Match Management'):
         discordMessage['messageContent']['banMetadata'] += f'Attack:    **{att1}** or if banned **{att2}**\n'
         discordMessage['messageContent']['banMetadata'] += f'Defense: **{def1}** or if banned **{def2}**\n'
 
-        discordMessage['messageContent']['actionPrompt'] = 'Next, use "**!setMap map**" and "**!ban op1 op2...**", then the match with **!attack** ⚔️ or **!defense** 🛡️.'
+        discordMessage['messageContent']['actionPrompt'] = 'Next, use "**!setMap map**" and "**!ban op1 op2...**", then start playing with **!attack** ⚔️ or **!defense** 🛡️.'
         discordMessage['reactions'] = ['⚔️', '🛡️']
 
         self.bot.saveOngoingMatch(ctx, match)
