@@ -20,7 +20,7 @@ class OngoingMatch(commands.Cog, name='Ongoing Match'):
 
     @commands.command(aliases=['setMap', 'map'])
     async def _setMap(self, ctx: commands.Context, *mapName):
-        """Sets the map for the match. This will influence the sites displayed for defensive rounds. Use **!setMap map** to set the map. A map can be set at any point in the match."""
+        """Sets the map for the match. This will influence the sites displayed for defensive rounds. Use **!setMap map** to set the map. A map can be set at any point in the match. Matches without a map set will not be included in statistics."""
         match, discordMessage, canContinue = await self.bot.getMatchData(ctx)
         if not canContinue:
             return
