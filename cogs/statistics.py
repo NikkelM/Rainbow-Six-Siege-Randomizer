@@ -54,7 +54,7 @@ class Statistics(commands.Cog, name='Statistics'):
                 for stat in additionalStatistics:
                     message += f'**{stat[0].title()}**: {stat[1]}\n'
         elif statisticType == 'help':
-            message = 'The **!stats** command allows you to query and view statistics for yourself, your server, or another user on this server.\n\n'
+            message = 'The "**!stats**" command allows you to query and view statistics for yourself, your server, or another user on this server.\n\n'
             message += 'Available *statisticTypes* are:\n'
             message += '**overall**: General statistics for a player, such as win/loss ratios for maps and operators.\n'
             message += '**server**: The same as the **overall** statistic, but for matches played on the current server.\n'

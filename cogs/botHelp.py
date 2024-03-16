@@ -9,7 +9,7 @@ class CustomHelpCommand(commands.HelpCommand):
         return '%s%s %s' % (self.context.clean_prefix, command.qualified_name, command.signature)
     
     async def send_error_message(self, error):
-        embed = discord.Embed(title="Error", description=f"{error} Use **!help** to view the list of commands.", color=discord.Color.red())
+        embed = discord.Embed(title="Error", description=f'{error} Use "**!help**" to view the list of commands.', color=discord.Color.red())
         channel = self.get_destination()
 
         await channel.send(embed=embed)
