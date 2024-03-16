@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands
 import re
+from version import __version__ as VERSION
 
 class CustomHelpCommand(commands.HelpCommand):
     """Overwrites the default help command for a better looking help message."""
@@ -8,13 +9,13 @@ class CustomHelpCommand(commands.HelpCommand):
         return '%s%s %s' % (self.context.clean_prefix, command.qualified_name, command.signature)
     
     async def send_error_message(self, error):
-        embed = discord.Embed(title="Error", description=f"{error} Use **!help** to view the list of commands.", color=discord.Color.red())
+        embed = discord.Embed(title="Error", description=f'{error} Use "**!help**" to view the list of commands.', color=discord.Color.red())
         channel = self.get_destination()
 
         await channel.send(embed=embed)
 
     async def send_bot_help(self, mapping):
-        embed = discord.Embed(title="Help - RandomSixBot", color=discord.Color.blurple())
+        embed = discord.Embed(title=f"Help - RandomSixBot v{VERSION}", color=discord.Color.blurple())
 
         for cog, commands in mapping.items():
             filtered = await self.filter_commands(commands, sort=True)

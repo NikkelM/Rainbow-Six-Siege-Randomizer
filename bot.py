@@ -122,11 +122,11 @@ class RainbowBot(commands.Bot):
     async def on_ready(self):
         print(f'Logged in as {bot.user}')
         cogs_list = [
-            'general',
             'matchManagement',
             'ongoingMatch',
             'trackingMatchStatistics',
-            'statistics'
+            'statistics',
+            'general'
         ]
         for cog in cogs_list:
             await bot.load_extension(f'cogs.{cog}')
@@ -180,8 +180,10 @@ class RainbowBot(commands.Bot):
             member = reaction.message.guild.get_member(user.id)
             ctx.author = member if member.voice else ctx.author
             await self.get_cog('Match Management')._another(ctx, 'here')
-        elif reaction.emoji == '👎': # End the session
+        elif reaction.emoji == '👎': # End the match
             await self.get_cog('Match Management')._goodnight(ctx)
+        elif reaction.emoji == '✋': # End the match without saving statistics
+            await self.get_cog('Match Management')._goodnight(ctx, 'delete')
 
         # Statistics
         elif reaction.emoji == '🗡️': # Player got an interrogation
@@ -211,8 +213,26 @@ class RainbowBot(commands.Bot):
         message = '\n'.join([v for v in discordMessage['messageContent'].values() if v != ''])
 
         if discordMessage['matchMessageId']:
+            recentMessages = [message async for message in ctx.channel.history(limit=7)]
             matchMessage = await ctx.channel.fetch_message(discordMessage['matchMessageId'])
-            await matchMessage.edit(content=message)
+
+            if matchMessage in recentMessages:
+                numLinesInRecentMessages = 0
+                for recentMessage in recentMessages:
+                    if recentMessage.id == matchMessage.id:
+                        break
+                    numLinesInRecentMessages += len(recentMessage.content.split('\n'))
+
+                if numLinesInRecentMessages < 12:
+                    await matchMessage.edit(content=message)
+                else:
+                    await matchMessage.delete()
+                    matchMessage = (await ctx.send(message))
+                    discordMessage['matchMessageId'] = matchMessage.id
+            else:
+                await matchMessage.delete()
+                matchMessage = (await ctx.send(message))
+                discordMessage['matchMessageId'] = matchMessage.id
         else:
             matchMessage = (await ctx.send(message))
             discordMessage['matchMessageId'] = matchMessage.id
@@ -293,6 +313,14 @@ class RainbowBot(commands.Bot):
                 VALUES (?, ?, COALESCE((SELECT value FROM player_additional_stats WHERE player_id = ? AND stat_type = ?), 0) + 1)
             """, (playerId, statType, playerId, statType))
             self.conn.commit()
+
+    def removeMatchData(self, matchId):
+        """Removes all data associated with a match from the database."""
+        self.cursor.execute("DELETE FROM matches WHERE match_id = ?", (matchId,))
+        self.cursor.execute("DELETE FROM player_matches WHERE match_id = ?", (matchId,))
+        self.cursor.execute("DELETE FROM rounds WHERE match_id = ?", (matchId,))
+        self.cursor.execute("DELETE FROM player_rounds WHERE match_id = ?", (matchId,))
+        self.conn.commit()
 
     def saveDiscordMessage(self, ctx: commands.Context, discordMessage):
         serverId = ctx.guild.id

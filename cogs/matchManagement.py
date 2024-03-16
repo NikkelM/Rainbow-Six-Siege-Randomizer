@@ -11,17 +11,23 @@ class MatchManagement(commands.Cog, name='Match Management'):
 
     @commands.command(aliases=['startMatch', 'start', 'play'], category='Rainbow Six')
     async def _startMatch(self, ctx: commands.Context, *playerNamesOrHere):
-        """Starts a new match with up to five players. Use **!startMatch here** to start a match with everyone in your current voice channel, or **!startMatch @player1 @player2...** to start a match with the mentioned players. This command must be used before in order for any other match commands to work."""
+        """Starts a new match with up to five players. Use **!startMatch here** to start a match with everyone in your current voice channel, or **!startMatch @player1 @player2...** to start a match with the mentioned players. This command must be used first in order for any other match commands to work."""
         serverId = ctx.guild.id
         matchData = self.bot.cursor.execute("SELECT match_data FROM ongoing_matches WHERE server_id = ?", (serverId,)).fetchone()
 
         if matchData is not None and matchData[0] is not None:
-            await ctx.message.delete()
+            oldMatch = RainbowMatch(json.loads(matchData[0]))
             discordMessage = self.bot.cursor.execute("SELECT discord_message FROM ongoing_matches WHERE server_id = ?", (serverId,)).fetchone()[0]
             discordMessage = json.loads(discordMessage)
-            discordMessage['messageContent']['actionPrompt'] = 'A match is already in progress. Use "**!another**" to start a new match with the same players, "**!another here**" to start a match with everyone in your voice channel, or "**!goodnight**" to end the session.'
-            await self.bot.sendMatchMessage(ctx, discordMessage)
-            return
+            if not oldMatch.isMatchFinished():
+                await ctx.message.delete()
+                previousActionPrompt = discordMessage['messageContent']['actionPrompt']
+                discordMessage['messageContent']['actionPrompt'] = 'A match is already in progress. Use "**!another**" to start a new match with the same players, "**!another here**" to start a match with everyone in your voice channel, or "**!goodnight**" to end the match.\n' if '!another' not in discordMessage['messageContent']['actionPrompt'] else ''
+                discordMessage['messageContent']['actionPrompt'] += previousActionPrompt
+                await self.bot.sendMatchMessage(ctx, discordMessage)
+                return
+            else:
+                await self._goodnight(ctx)
 
         match = RainbowMatch()
         discordMessage = self.bot.resetDiscordMessage(ctx.guild.id)
@@ -67,7 +73,7 @@ class MatchManagement(commands.Cog, name='Match Management'):
         discordMessage['messageContent']['banMetadata'] += f'Attack:    **{att1}** or if banned **{att2}**\n'
         discordMessage['messageContent']['banMetadata'] += f'Defense: **{def1}** or if banned **{def2}**\n'
 
-        discordMessage['messageContent']['actionPrompt'] = 'Next, use "**!setMap map**" and "**!ban op1 op2...**", then the match with **!attack** ⚔️ or **!defense** 🛡️.'
+        discordMessage['messageContent']['actionPrompt'] = 'Next, use "**!setMap map**" and "**!ban op1 op2...**", then start playing with "**!attack**" ⚔️ or "**!defense**" 🛡️.'
         discordMessage['reactions'] = ['⚔️', '🛡️']
 
         self.bot.saveOngoingMatch(ctx, match)
@@ -81,9 +87,14 @@ class MatchManagement(commands.Cog, name='Match Management'):
             return
         if ctx.message.id != discordMessage['matchMessageId'] or not discordMessage['matchMessageId']:
             await ctx.message.delete()
+        
+        if match.currRound > 0:
+            discordMessage['messageContent']['playersBanner'] = f'You cannot add players to a match that has already started. Use "**!another @player1 @player2...**" to start a new match.\nCurrent players are {match.playersString}{", playing on **" + match.map + "**" if match.map else ""}.\n'
+            await self.bot.sendMatchMessage(ctx, discordMessage)
+            return
 
         if len(playerNames) + len(match.players) > 5:
-            discordMessage['messageContent']['playersBanner'] = f"A match can only have up to **five** players! **!removePlayers** first if you need to. Current players are {match.playersString}{', playing on **' + match.map + '**' if match.map else ''}.\n"
+            discordMessage['messageContent']['playersBanner'] = f'A match can only have up to **five** players! "**!removePlayers @player1 @player2...**" first if you need to. Current players are {match.playersString}{", playing on **" + match.map + "**" if match.map else ""}.\n'
             await self.bot.sendMatchMessage(ctx, discordMessage)
             return
         elif len(playerNames) > 0:
@@ -111,6 +122,11 @@ class MatchManagement(commands.Cog, name='Match Management'):
             return
         if ctx.message.id != discordMessage['matchMessageId'] or not discordMessage['matchMessageId']:
             await ctx.message.delete()
+
+        if match.currRound > 0:
+            discordMessage['messageContent']['playersBanner'] = f'You cannot remove players from a match that has already started. Use "**!another @player1 @player2...**" to start a new match.\nCurrent players are {match.playersString}{", playing on **" + match.map + "**" if match.map else ""}.\n'
+            await self.bot.sendMatchMessage(ctx, discordMessage)
+            return
 
         if len(playerNames) > 0:
             playerObjects = self._validatePlayerNames(ctx, playerNames)
@@ -163,8 +179,8 @@ class MatchManagement(commands.Cog, name='Match Management'):
         await self._startMatch(ctx, *playerIdStrings)
 
     @commands.command(aliases=['goodnight', 'bye', 'goodbye'])
-    async def _goodnight(self, ctx: commands.Context):
-        """Ends the current match and/or session."""
+    async def _goodnight(self, ctx: commands.Context, delete: str = ''):
+        """Ends the current match. Use \"delete\" as an argument to remove the match data from the database."""
         match, discordMessage, canContinue = await self.bot.getMatchData(ctx)
         if not canContinue:
             return
@@ -181,8 +197,13 @@ class MatchManagement(commands.Cog, name='Match Management'):
         discordMessage['messageContent']['roundLineup'] = ''
         discordMessage['messageContent']['banMetadata'] = ''
         discordMessage['messageContent']['statsBanner'] = ''
-        discordMessage['messageContent']['actionPrompt'] = 'Use **!startMatch** to start a new match.'
+        discordMessage['messageContent']['actionPrompt'] = 'Use "**!startMatch**" to start a new match.'
         discordMessage['reactions'] = []
+
+        if delete == 'delete':
+            self.bot.removeMatchData(match.matchId)
+            discordMessage['messageContent']['statsBanner'] = 'Match data has been **removed** from the database (additional player statistics such as interrogations are always saved).\n'
+
         await self.bot.sendMatchMessage(ctx, discordMessage)
 
         self.bot.cursor.execute("DELETE FROM ongoing_matches WHERE server_id = ?", (ctx.guild.id,))

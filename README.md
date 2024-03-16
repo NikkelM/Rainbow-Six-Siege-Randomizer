@@ -12,11 +12,11 @@ Commands related to setting up matches and managing players.
 
 | Command | Argument | Description |
 | ------- | -------- | ----------- |
-| `!startMatch`, `!start`, `!play` | List of `@Player` mentions, or `here` | Starts a new match with up to five players. Use **!startMatch here** to start a match with everyone in your current voice channel, or **!startMatch @player1 @player2...** to start a match with the mentioned players. This command must be used before in order for any other match commands to work. |
+| `!startMatch`, `!start`, `!play` | List of `@Player` mentions, or `here` | Starts a new match with up to five players. Use **!startMatch here** to start a match with everyone in your current voice channel, or **!startMatch @player1 @player2...** to start a match with the mentioned players. This command must be used first in order for any other match commands to work. |
 | `!addPlayers`, `!addPlayer` | List of `@Player` mentions | Adds additional players to the match. Use **!addPlayers @player1 @player2...** to add the mentioned players to the match. The total number of players cannot exceed five, use **!removePlayers** first if you need to. |
 | `!removePlayers`, `!removePlayer` | List of `@Player` mentions | Removes players from the match. Use **!removePlayers @player1 @player2...** to remove the mentioned players from the match. At least one player must remain in the match. |
 | `!another`, `!again`, 👍 | `here` 🎤 | Starts a new match with the same players as the previous one, or with everyone in the current voice channel if the `here` argument was provided. |
-| `!goodnight`, `!bye`, 👎 | | Ends the current match and/or session. |
+| `!goodnight`, `!bye`, 👎 | `delete` ✋ | Ends the current match. Use the `delete` argument to delete the match from the database (i.e. if there were blatant cheaters and you do not want the data to skew statistics). |
 
 ### Ongoing Match
 
@@ -31,7 +31,8 @@ Commands to interact with an ongoing match, such as banning operators or playing
 | `!defense`, `!startDefense`, `!defend`, 🛡️ | | Starts the match on defense. |
 | `!won`, `!w` | `attack` ⚔️ or `defense` 🛡️, if winning starts overtime | Marks the current round as won and starts a new round. If winning starts overtime, you must specify the side you start overtime on with **!won attack** ⚔️ or **!won defense** 🛡️. |
 | `!lost`, `!l` | `attack` ⚔️ or `defense` 🛡️, if losing starts overtime | Marks the current round as lost and starts a new round. If losing starts overtime, you must specify the side you start overtime on with **!lost attack** ⚔️ or **!lost defense** 🛡️. |
-| `!swap`, `!switch` | A `@Player` mention (optional) and a valid operator name | Swaps the operator the given player is playing in the current round with the given operator. If no `@Player` mention is given, the message author is assumed to be switching to the given operator. |
+| `!swap`, `!switch` | A valid operator name and a `@Player` mention (optional). | Swaps the operator a player is playing for another. Use **!swap operator** to swap the operator you are playing, or **!swap operator @player** to swap the operator another player is playing. |
+| `!swapSite`, `!site` | A site number between 1 and 4 | Changes the site the round is played on, if playing on defense. Only sites that have not been won yet can be switched to. Use **!site <siteNumber>** to change the site for the current round. |
 
 ### Tracking Match Statistics
 
@@ -72,8 +73,9 @@ Then, create a Discord bot. You can follow the [discord.py documentation](https:
 The bot needs the `Server Members` and `Messages` intents to work properly, and the following permissions (to be configured under `OAuth2` -> `URL Generator` -> `bot`):
 
 - Read Messages/View Channels
+- Read Message History
 - Send Messages
-- Manage Messages
+- Manage Messages (to remove messages that contain commands for the bot, and declutter the chat)
 
 After selecting the given intents and permissions, an invite link is generated that you can use to add the bot to your server.
 
