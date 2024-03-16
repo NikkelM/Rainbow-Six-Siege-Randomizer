@@ -58,8 +58,8 @@ Commands that allow you to manage the bot itself.
 | Command | Argument | Description |
 | ------- | -------- | ----------- |
 | `!repeatMessage`, `!repeat`, `!sayAgain` | | Sends the last message sent by the bot again as a new message. |
-| `!version` | | Displays the version of the bot. |
-| `!help` | | Shows a list of all commands and their descriptions. Use `!help command` to view a description of a specific command, and `!help category` to view all commands from the given category. |
+| `!about` | | Displays general information about the bot. |
+| `!help` | | Shows a list of all commands and their descriptions. Use `!help <command>` to view a description of a specific command, and `!help <category>` to view all commands from the given category. |
 
 ## Setup
 
