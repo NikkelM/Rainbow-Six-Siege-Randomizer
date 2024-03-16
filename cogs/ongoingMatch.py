@@ -164,6 +164,51 @@ class OngoingMatch(commands.Cog, name='Ongoing Match'):
         self.bot.saveOngoingMatch(ctx, match)
         await self.bot.sendMatchMessage(ctx, discordMessage)
 
+    @commands.command(aliases=['site', 'swapSite'])
+    async def _site(self, ctx: commands.Context, siteNumber: str):
+        """Changes the site the round is played on if playing on defense. Only sites that have not been won yet can be switched to. Use **!site <siteNumber>** to change the site for the current round."""
+        match, discordMessage, canContinue = await self.bot.getMatchData(ctx)
+        if not canContinue:
+            return
+        if ctx.message.id != discordMessage['matchMessageId'] or not discordMessage['matchMessageId']:
+            await ctx.message.delete()
+
+        if match.currRound == 0:
+            discordMessage['messageContent']['actionPrompt'] = 'You can only change the site during an ongoing round. Use **!attack** ⚔️ or **!defense** 🛡️ to start the match.'
+            await self.bot.sendMatchMessage(ctx, discordMessage)
+            return
+
+        if match.playingOnSide != 'defense':
+            discordMessage['messageContent']['statsBanner'] = 'You can only change the site during a defensive round. Use **!site siteNumber** to try again.'
+            await self.bot.sendMatchMessage(ctx, discordMessage)
+            return
+
+        wordToNumber = {
+            'one': 1,
+            'two': 2,
+            'three': 3,
+            'four': 4
+        }
+        try:
+            siteNumber = wordToNumber[siteNumber.lower()] if siteNumber.isalpha() else int(siteNumber)
+        except KeyError:
+            discordMessage['messageContent']['statsBanner'] = f'**{siteNumber}** is not a valid site number. Use **!site <siteNumber>** to try again.'
+            siteNumber = None
+
+        if 1 <= siteNumber <= 4:
+            newSite = match.trySetSite(siteNumber)
+            if newSite is not None:
+                discordMessage['messageContent']['roundMetadata'] = f'Here is your lineup for round {match.currRound}:'
+                discordMessage['messageContent']['roundMetadata'] += f'\nChoose the **{newSite}** site.'
+                discordMessage['messageContent']['statsBanner'] = 'The site has been changed successfully.'
+            else:
+                discordMessage['messageContent']['statsBanner'] = f'You have already won on the **{siteNumber}** site, so you cannot play it again.'
+        else:
+            discordMessage['messageContent']['statsBanner'] = f'**{siteNumber}** is not a valid site number (1-4). Use **!site <siteNumber>** to try again.'
+
+        self.bot.saveOngoingMatch(ctx, match)
+        await self.bot.sendMatchMessage(ctx, discordMessage)
+
     async def _banUnban(self, ctx: commands.Context, *operators, ban=True):
         match, discordMessage, canContinue = await self.bot.getMatchData(ctx)
         if not canContinue:

@@ -222,6 +222,15 @@ class RainbowMatch:
         """Returns a choice of site that should be played."""
         siteIndex = random.choice(self.sites)
         return siteIndex, self._getMap(self.map)[1][siteIndex]
+    
+    def trySetSite(self, siteIndex):
+        """Attempts to set a new site for the current round. Returns the name of the new site if successful, or None if the site is invalid."""
+        # The site index is 1-indexed when input by the user
+        siteIndex -= 1
+        if siteIndex in self.sites:
+            self.rounds[-1]["site"] = siteIndex
+            return self._getMap(self.map)[1][siteIndex]
+        return None
 
     def getPlayedOperators(self):
         """Returns a random list of operators for the specified side, excluding any banned operators."""
