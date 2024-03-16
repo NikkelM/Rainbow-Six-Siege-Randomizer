@@ -180,9 +180,9 @@ class RainbowBot(commands.Bot):
             member = reaction.message.guild.get_member(user.id)
             ctx.author = member if member.voice else ctx.author
             await self.get_cog('Match Management')._another(ctx, 'here')
-        elif reaction.emoji == '👎': # End the session
+        elif reaction.emoji == '👎': # End the match
             await self.get_cog('Match Management')._goodnight(ctx)
-        elif reaction.emoji == '✋': # End the session without saving statistics
+        elif reaction.emoji == '✋': # End the match without saving statistics
             await self.get_cog('Match Management')._goodnight(ctx, 'delete')
 
         # Statistics
