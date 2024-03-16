@@ -163,8 +163,8 @@ class MatchManagement(commands.Cog, name='Match Management'):
         await self._startMatch(ctx, *playerIdStrings)
 
     @commands.command(aliases=['goodnight', 'bye', 'goodbye'])
-    async def _goodnight(self, ctx: commands.Context):
-        """Ends the current match and/or session."""
+    async def _goodnight(self, ctx: commands.Context, delete: str = ''):
+        """Ends the current match and/or session. Use \"delete\" as an argument to remove the match data from the database."""
         match, discordMessage, canContinue = await self.bot.getMatchData(ctx)
         if not canContinue:
             return
@@ -183,6 +183,11 @@ class MatchManagement(commands.Cog, name='Match Management'):
         discordMessage['messageContent']['statsBanner'] = ''
         discordMessage['messageContent']['actionPrompt'] = 'Use **!startMatch** to start a new match.'
         discordMessage['reactions'] = []
+
+        if delete == 'delete':
+            self.bot.removeMatchData(match.matchId)
+            discordMessage['messageContent']['statsBanner'] = 'Match data has been **removed** from the database (additional player statistics such as interrogations are always saved).\n'
+
         await self.bot.sendMatchMessage(ctx, discordMessage)
 
         self.bot.cursor.execute("DELETE FROM ongoing_matches WHERE server_id = ?", (ctx.guild.id,))

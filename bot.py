@@ -182,6 +182,8 @@ class RainbowBot(commands.Bot):
             await self.get_cog('Match Management')._another(ctx, 'here')
         elif reaction.emoji == '👎': # End the session
             await self.get_cog('Match Management')._goodnight(ctx)
+        elif reaction.emoji == '✋': # End the session without saving statistics
+            await self.get_cog('Match Management')._goodnight(ctx, 'delete')
 
         # Statistics
         elif reaction.emoji == '🗡️': # Player got an interrogation
@@ -293,6 +295,14 @@ class RainbowBot(commands.Bot):
                 VALUES (?, ?, COALESCE((SELECT value FROM player_additional_stats WHERE player_id = ? AND stat_type = ?), 0) + 1)
             """, (playerId, statType, playerId, statType))
             self.conn.commit()
+
+    def removeMatchData(self, matchId):
+        """Removes all data associated with a match from the database."""
+        self.cursor.execute("DELETE FROM matches WHERE match_id = ?", (matchId,))
+        self.cursor.execute("DELETE FROM player_matches WHERE match_id = ?", (matchId,))
+        self.cursor.execute("DELETE FROM rounds WHERE match_id = ?", (matchId,))
+        self.cursor.execute("DELETE FROM player_rounds WHERE match_id = ?", (matchId,))
+        self.conn.commit()
 
     def saveDiscordMessage(self, ctx: commands.Context, discordMessage):
         serverId = ctx.guild.id

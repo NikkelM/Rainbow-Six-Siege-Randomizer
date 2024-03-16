@@ -264,10 +264,10 @@ class OngoingMatch(commands.Cog, name='Ongoing Match'):
         discordMessage['messageContent']['roundMetadata'] = ''
         discordMessage['messageContent']['roundLineup'] = ''
         discordMessage['messageContent']['playersBanner'] = f"Finished a match with {match.playersString}{' on **' + match.map + '**' if match.map else ''}.\n"
-        discordMessage['messageContent']['matchScore'] = f'The match is over! The final score was **{match.scores["blue"]}**:**{match.scores["red"]}**.'
+        discordMessage['messageContent']['matchScore'] = f'The match is over! The final score was **{match.scores["blue"]}**:**{match.scores["red"]}**.\n'
         discordMessage['messageContent']['statsBanner'] = ''
-        discordMessage['messageContent']['actionPrompt'] = 'Use "**!another**" 👍 to start a new match with the same players, "**!another here**" 🎤 to start a match with everyone in your voice channel, or "**!goodnight**" 👎 to end the session.'
-        discordMessage['reactions'] = ['👍', '🎤', '👎']
+        discordMessage['messageContent']['actionPrompt'] = 'Use "**!another**" 👍 for a new match with the same players, "**!another here**" 🎤 for a new match in your voice channel, "**!goodnight**" 👎 to end the session, or "**!goodnight delete**" ✋ to end the match and exclude it from the statistics.'
+        discordMessage['reactions'] = ['👍', '🎤', '👎', '✋']
         self.bot.saveOngoingMatch(ctx, match)
         self.bot.saveCompletedMatch(ctx, match)
         await self.bot.sendMatchMessage(ctx, discordMessage)
