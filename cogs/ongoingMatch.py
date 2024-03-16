@@ -37,6 +37,10 @@ class OngoingMatch(commands.Cog, name='Ongoing Match'):
         couldSetMap = match.setMap(mapName)
         if couldSetMap:
             discordMessage['messageContent']['playersBanner'] = f"Playing a match with {match.playersString}{' on **' + match.map + '**' if match.map else ''}.\n"
+            
+            site = match.getCurrentSiteName()
+            discordMessage['messageContent']['roundMetadata'] = f'Here is your lineup for round {match.currRound}:'
+            discordMessage['messageContent']['roundMetadata'] += f'\nChoose the **{site}** site.'
         else:
             discordMessage['messageContent']['actionPrompt'] += f'**{mapName}** is not a valid map. Use "**!setMap map**" to try again.\n'
 

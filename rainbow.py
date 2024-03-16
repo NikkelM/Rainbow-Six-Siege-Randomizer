@@ -205,8 +205,8 @@ class RainbowMatch:
     
     def setupRound(self):
         """Starts a new round, returning the chosen operators and site."""
-        siteIndex, playedSite = self.getPlayedSite() if self.playingOnSide == "defense" else (None, None)
-        playedOperators = self.getPlayedOperators()
+        siteIndex, playedSite = self.getRandomSite() if self.playingOnSide == "defense" else (None, None)
+        playedOperators = self.getRandomOperators()
         attackers, defenders = self._getOperators().values()
 
         self.rounds.append({
@@ -218,7 +218,7 @@ class RainbowMatch:
         })
         return playedOperators, playedSite
 
-    def getPlayedSite(self):
+    def getRandomSite(self):
         """Returns a choice of site that should be played."""
         siteIndex = random.choice(self.sites)
         return siteIndex, self._getMap(self.map)[1][siteIndex]
@@ -231,8 +231,12 @@ class RainbowMatch:
             self.rounds[-1]["site"] = siteIndex
             return self._getMap(self.map)[1][siteIndex]
         return None
+    
+    def getCurrentSiteName(self):
+        """Returns the name of the site currently being played."""
+        return self._getMap(self.map)[1][self.rounds[-1]["site"]] if self.rounds else None
 
-    def getPlayedOperators(self):
+    def getRandomOperators(self):
         """Returns a random list of operators for the specified side, excluding any banned operators."""
         attackers, defenders = self._getOperators().values()
         available_operators = [op for op in (attackers if self.playingOnSide == "attack" else defenders) if op not in self.bannedOperators]
