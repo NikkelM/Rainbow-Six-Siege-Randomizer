@@ -164,7 +164,7 @@ class OngoingMatch(commands.Cog, name='Ongoing Match'):
         self.bot.saveOngoingMatch(ctx, match)
         await self.bot.sendMatchMessage(ctx, discordMessage)
 
-    @commands.command(aliases=['site', 'swapSite'])
+    @commands.command(aliases=['swapSite', 'site'])
     async def _site(self, ctx: commands.Context, siteNumber: str):
         """Changes the site the round is played on, if playing on defense. Only sites that have not been won yet can be switched to. Use **!site <siteNumber>** to change the site for the current round."""
         match, discordMessage, canContinue = await self.bot.getMatchData(ctx)
