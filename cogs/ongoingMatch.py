@@ -38,7 +38,7 @@ class OngoingMatch(commands.Cog, name='Ongoing Match'):
         if couldSetMap:
             discordMessage['messageContent']['playersBanner'] = f"Playing a match with {match.playersString}{' on **' + match.map + '**' if match.map else ''}.\n"
 
-            if match.currRound > 0:
+            if match.currRound > 0 and match.playingOnSide == 'defense':
                 site = match.getCurrentSiteName()
                 discordMessage['messageContent']['roundMetadata'] = f'Here is your lineup for round {match.currRound}:'
                 discordMessage['messageContent']['roundMetadata'] += f'\nChoose the **{site}** site.'
