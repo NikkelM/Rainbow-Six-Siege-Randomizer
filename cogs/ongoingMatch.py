@@ -119,7 +119,7 @@ class OngoingMatch(commands.Cog, name='Ongoing Match'):
             self.bot.saveDiscordMessage(ctx, discordMessage)
             await self._endMatch(ctx)
 
-    @commands.command(aliases=['swap', 'switch', 'newOperator', 'newOp'])
+    @commands.command(aliases=['swap', 'switch'])
     async def _swap(self, ctx: commands.Context, player, operator = None):
         """Swaps the operator a player is playing for another. Use **!swap operator** to swap the operator you are playing, or **!swap @player operator** to swap the operator another player is playing."""
         match, discordMessage, canContinue = await self.bot.getMatchData(ctx)
