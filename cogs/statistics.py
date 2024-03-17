@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
 from bot import RainbowBot
-from rainbow import RainbowData
+from rainbow import RainbowData, RainbowMatch
 
 class Statistics(commands.Cog, name='Statistics'):
     """Commands to view statistics for players and past matches."""
@@ -219,6 +219,21 @@ class Statistics(commands.Cog, name='Statistics'):
             numOperatorPlays = len([o for o in operators if o[0] == operator])
             message += f'**{self._getOperatorFromId(operator)}: {round(defenders[operator]["wins"]/defenders[operator]["losses"], 2) if defenders[operator]["losses"] != 0 else float(defenders[operator]["wins"])}** (**{numOperatorPlays}** plays)\n'
 
+        return message
+
+    def createMatchRecapStringFromMatch(self, match: RainbowMatch):
+        """Creates a recap of all rounds played in the match."""
+        message = f'Started playing on {"**Attack**" if match.rounds[0]["site"] is None else "**Defense**"}.\n\n'
+        for roundIndex, round in enumerate(match.rounds):
+            playedSite = f" on\n**{RainbowData.maps[match.map][round['site']]}**" if round['site'] is not None else ""
+            message += f'{"**Won**" if round["result"] == 1 else "**Lost**"} round {roundIndex + 1}{playedSite}\n'
+            for playerIndex, player in enumerate(match.players):
+                operator = self._getOperatorFromId(round['operators'][playerIndex])
+                message += f'\t{player["mention"]} played {operator}\n'
+        
+        # TODO: Additional player statistics, with round attached
+        # TODO: Banned operators
+        # TODO: Include new line for side swap, overtime
         return message
 
 async def setup(bot: RainbowBot):

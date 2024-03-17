@@ -332,8 +332,9 @@ class RainbowBot(commands.Bot):
         """Creates a new thread under the match message with statistics for the match."""
         matchMessage = await ctx.channel.fetch_message(discordMessage['matchMessageId'])
         matchRecap = f'## Match Recap: {match.map if match.map is not None else "Unknown Map"}\n\n'
+        matchRecap += self.get_cog('Statistics').createMatchRecapStringFromMatch(match)
         
-        thread = await ctx.channel.create_thread(name=f"Match Recap: {match.map if match.map is not None else 'Unknown Map'} at {matchMessage.created_at.strftime('%H:%M')}", message=matchRecap)
+        thread = await ctx.channel.create_thread(name=f"Match Recap: {match.map if match.map is not None else 'Unknown Map'} at {matchMessage.created_at.strftime('%H:%M')}", message=matchMessage)
         await thread.send(matchRecap)
         await thread.edit(archived=True)
 
