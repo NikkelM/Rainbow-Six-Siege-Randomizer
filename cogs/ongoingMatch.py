@@ -146,6 +146,8 @@ class OngoingMatch(commands.Cog, name='Ongoing Match'):
             return
         if player is None:
             player = ctx.author
+        else:
+            player = await commands.MemberConverter().convert(ctx, player)
 
         operatorMatch, score = process.extractOne(operator, validOperators)
         if score >= 75:
