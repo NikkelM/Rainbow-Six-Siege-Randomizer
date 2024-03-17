@@ -328,6 +328,15 @@ class RainbowBot(commands.Bot):
         self.cursor.execute("UPDATE ongoing_matches SET discord_message = ? WHERE server_id = ?", (discordMessage, serverId))
         self.conn.commit()
 
+    async def createMatchRecapThread(self, ctx: commands.Context, match: RainbowMatch, discordMessage: dict):
+        """Creates a new thread under the match message with statistics for the match."""
+        matchMessage = await ctx.channel.fetch_message(discordMessage['matchMessageId'])
+        matchRecap = f'## Match Recap: {match.map if match.map is not None else "Unknown Map"}\n\n'
+        
+        thread = await ctx.channel.create_thread(name=f"Match Recap: {match.map if match.map is not None else 'Unknown Map'} at {matchMessage.created_at.strftime('%H:%M')}", message=matchRecap)
+        await thread.send(matchRecap)
+        await thread.edit(archived=True)
+
     async def getMatchData(self, ctx: commands.Context, shouldAlertOnNoMatch=True):
         """Gets the match data and discord message from the database. If there is no match in progress, it will send a message to the user."""
         serverId = ctx.guild.id
