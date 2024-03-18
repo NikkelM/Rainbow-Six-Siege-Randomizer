@@ -224,17 +224,29 @@ class Statistics(commands.Cog, name='Statistics'):
     def createMatchRecapStringFromMatch(self, match: RainbowMatch):
         """Creates a recap of all rounds played in the match."""
         message = ''
-        message += f'Banned operators: {", ".join([self._getOperatorFromId(op) for op in match.bannedOperators])}\n'
+        message += f'Banned operators: {", ".join([f"**{op}**" for op in match.bannedOperators])}\n'
         message += f'Started playing on {"**Attack**" if match.rounds[0]["site"] is None else "**Defense**"}.\n\n'
+
         for roundIndex, round in enumerate(match.rounds):
-            playedSite = f" on\n**{RainbowData.maps[match.map][round['site']]}**" if round['site'] is not None else ""
-            message += f'{"**Won**" if round["result"] == 1 else "**Lost**"} round {roundIndex + 1}{playedSite}\n'
+            if round['site'] is not None:
+                siteName = RainbowData.maps[match.map][round['site']] if match.map is not None else f"the {RainbowData.maps['UnknownMap'][round['site']]} site"
+                playedSite = f" (defense) on\n\t**{siteName}**"
+            else:
+                playedSite = " (attack)"
+            message += f"{'**Won**' if round['result'] == 1 else '**Lost**'} round {roundIndex + 1}{playedSite}\n"
+
             for playerIndex, player in enumerate(match.players):
                 operator = self._getOperatorFromId(round['operators'][playerIndex])
-                message += f'\t{player["mention"]} played {operator}\n'
+                message += f'\t{player["mention"]} played **{operator}**\n'
+                # If the player got a stat this round, add it to the message
+                for stat in match.playerStats:
+                    if stat['playerId'] == player['id'] and stat['round'] == roundIndex:
+                        if stat['statType'] == 'interrogations':
+                            message += f'\t\t**{player["mention"]} got interrogation**\n'
+            message += '\n'
         
+        message += f'Match ID: {match.matchId}'
         # TODO: Additional player statistics, with round attached
-        # TODO: Include new line for side swap, overtime
         return message
 
 async def setup(bot: RainbowBot):
