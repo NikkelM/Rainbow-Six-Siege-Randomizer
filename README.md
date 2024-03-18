@@ -76,6 +76,8 @@ The bot needs the `Server Members` and `Messages` intents to work properly, and 
 - Read Message History
 - Send Messages
 - Manage Messages (to remove messages that contain commands for the bot, and declutter the chat)
+- Create Public Threads
+- Send Messages in Threads
 
 After selecting the given intents and permissions, an invite link is generated that you can use to add the bot to your server.
 

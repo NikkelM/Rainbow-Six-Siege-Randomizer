@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
 from bot import RainbowBot
-from rainbow import RainbowData
+from rainbow import RainbowData, RainbowMatch
 
 class Statistics(commands.Cog, name='Statistics'):
     """Commands to view statistics for players and past matches."""
@@ -219,6 +219,36 @@ class Statistics(commands.Cog, name='Statistics'):
             numOperatorPlays = len([o for o in operators if o[0] == operator])
             message += f'**{self._getOperatorFromId(operator)}: {round(defenders[operator]["wins"]/defenders[operator]["losses"], 2) if defenders[operator]["losses"] != 0 else float(defenders[operator]["wins"])}** (**{numOperatorPlays}** plays)\n'
 
+        return message
+
+    def createMatchRecapStringFromMatch(self, match: RainbowMatch):
+        """Creates a recap of all rounds played in the match."""
+        message = ''
+        message += f'Banned operators: {", ".join([f"**{op}**" for op in match.bannedOperators])}\n'
+        message += f'Started playing on {"**Attack**" if match.rounds[0]["site"] is None else "**Defense**"}.\n\n'
+
+        for roundIndex, round in enumerate(match.rounds):
+            if round['site'] is not None:
+                siteName = RainbowData.maps[match.map][round['site']] if match.map is not None else f"the {RainbowData.maps['UnknownMap'][round['site']]} site"
+                playedSite = f" (defense) on\n\t**{siteName}**"
+            else:
+                playedSite = " (attack)"
+            message += f"{'**Won**' if round['result'] == 1 else '**Lost**'} round {roundIndex + 1}{playedSite}\n"
+
+            for playerIndex, player in enumerate(match.players):
+                operator = self._getOperatorFromId(round['operators'][playerIndex])
+                message += f'\t{player["mention"]} played **{operator}**\n'
+                for statType, playerStatValues in round['playerStats'].items():
+                    if playerStatValues.get(str(player["id"])):
+                        if statType == 'aces':
+                            message += f"\t\t{player['mention']} **aced** the round!\n"
+                        elif statType == 'interrogations':
+                            message += f"\t\t{player['mention']} got **{playerStatValues[str(player['id'])]} interrogation{'s' if playerStatValues[str(player['id'])] > 1 else ''}**!\n"
+                        else:
+                            message += f"\t\t{statType.title()}: {playerStatValues[str(player['id'])]}\n"
+            message += '\n'
+        
+        message += f'Match ID: {match.matchId}'
         return message
 
 async def setup(bot: RainbowBot):

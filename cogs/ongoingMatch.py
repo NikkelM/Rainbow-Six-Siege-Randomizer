@@ -320,6 +320,7 @@ class OngoingMatch(commands.Cog, name='Ongoing Match'):
         discordMessage['reactions'] = ['👍', '🎤', '👎', '✋']
         self.bot.saveOngoingMatch(ctx, match)
         self.bot.saveCompletedMatch(ctx, match)
+        await self.bot.createMatchRecapThread(ctx, match, discordMessage)
         await self.bot.sendMatchMessage(ctx, discordMessage)
     
     def _setRoundLineup(self, discordMessage: dict, match: RainbowMatch, operators: list, backupOperators: list = None):
