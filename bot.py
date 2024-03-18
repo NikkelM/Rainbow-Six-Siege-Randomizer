@@ -214,7 +214,7 @@ class RainbowBot(commands.Bot):
 
         if discordMessage['matchMessageId']:
             recentMessages = [message async for message in ctx.channel.history(limit=7)]
-            matchMessage = await ctx.channel.fetch_message(discordMessage['matchMessageId'])
+            matchMessage: discord.Message = await ctx.channel.fetch_message(discordMessage['matchMessageId'])
 
             if matchMessage in recentMessages:
                 numLinesInRecentMessages = 0
@@ -226,11 +226,25 @@ class RainbowBot(commands.Bot):
                 if numLinesInRecentMessages < 12:
                     await matchMessage.edit(content=message)
                 else:
-                    await matchMessage.delete()
+                    if ctx.channel.get_thread(matchMessage.id) is None:
+                        await matchMessage.delete()
+                    else:
+                        discordMessage['messageContent']['actionPrompt'] = 'Use "**!startMatch**" to start a new match.'
+                        message = '\n'.join([v for v in discordMessage['messageContent'].values() if v != ''])
+                        await matchMessage.edit(content=message)
+                        await matchMessage.clear_reactions()
+                        await self.archiveThread(ctx, matchMessage.id)
                     matchMessage = (await ctx.send(message))
                     discordMessage['matchMessageId'] = matchMessage.id
             else:
-                await matchMessage.delete()
+                if ctx.channel.get_thread(matchMessage.id) is None:
+                    await matchMessage.delete()
+                else:
+                    discordMessage['messageContent']['actionPrompt'] = 'Use "**!startMatch**" to start a new match.'
+                    message = '\n'.join([v for v in discordMessage['messageContent'].values() if v != ''])
+                    await matchMessage.edit(content=message)
+                    await matchMessage.clear_reactions()
+                    await self.archiveThread(ctx, matchMessage.id)
                 matchMessage = (await ctx.send(message))
                 discordMessage['matchMessageId'] = matchMessage.id
         else:
@@ -244,7 +258,7 @@ class RainbowBot(commands.Bot):
         else:
             self.saveDiscordMessage(ctx, discordMessage)
             await self._manageReactions(matchMessage, discordMessage)
-    
+
     async def _manageReactions(self, message: discord.Message, discordMessage):
         currentReactions = [r.emoji for r in message.reactions]
 
@@ -304,15 +318,15 @@ class RainbowBot(commands.Bot):
                 self.cursor.execute("INSERT INTO player_rounds (player_id, match_id, round_num, operator) VALUES (?, ?, ?, ?)", (playerId, matchId, roundNumber, operator))
                 self.conn.commit()
 
-        for stat in match.playerStats:
-            playerId = stat['playerId']
-            statType = stat['statType']
-            # Increase the counter of this stat by one, or create it if it doesn't exist.
-            self.cursor.execute("""
-                INSERT OR REPLACE INTO player_additional_stats (player_id, stat_type, value)
-                VALUES (?, ?, COALESCE((SELECT value FROM player_additional_stats WHERE player_id = ? AND stat_type = ?), 0) + 1)
-            """, (playerId, statType, playerId, statType))
-            self.conn.commit()
+        for round in match.rounds:
+            for statType, players in round['playerStats'].items():
+                for playerId, count in players.items():
+                    # Increase the counter of this stat by the count, or create it if it doesn't exist.
+                    self.cursor.execute("""
+                        INSERT OR REPLACE INTO player_additional_stats (player_id, stat_type, value)
+                        VALUES (?, ?, COALESCE((SELECT value FROM player_additional_stats WHERE player_id = ? AND stat_type = ?), 0) + ?)
+                    """, (playerId, statType, playerId, statType, count))
+                    self.conn.commit()
 
     def removeMatchData(self, matchId):
         """Removes all data associated with a match from the database."""
@@ -336,7 +350,12 @@ class RainbowBot(commands.Bot):
         
         thread = await ctx.channel.create_thread(name=f"Match Recap: {match.map if match.map is not None else 'Unknown Map'} at {matchMessage.created_at.strftime('%H:%M')}", message=matchMessage)
         await thread.send(matchRecap)
-        await thread.edit(archived=True)
+
+    async def archiveThread(self, ctx: commands.Context, threadId):
+        """Archives a thread."""
+        thread = ctx.channel.get_thread(threadId)
+        if thread:
+            await thread.edit(archived=True)
 
     async def getMatchData(self, ctx: commands.Context, shouldAlertOnNoMatch=True):
         """Gets the match data and discord message from the database. If there is no match in progress, it will send a message to the user."""

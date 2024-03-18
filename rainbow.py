@@ -44,7 +44,8 @@ class RainbowData:
         'Skyscraper': ['2F Karaoke/2F Tea Room', '2F Exhibition Room/2F Office', '1F BBQ/1F Kitchen', '1F Bathroom/1F Bedroom'],
         'Emerald Plains': ['2F Administration/2F CEO Office', '2F Private Gallery/2F Meeting', '1F Bar/1F Lounge', '1F Dining/1F Kitchen'],
         'Stadium Bravo': ['2F Armory Lockers/2F Archives', '2F Penthouse/2F VIP Lounge', '1F Showers/1F Server', '1F Service/1F Kitchen'],
-        'Nighthaven Labs': ['2F Command Center/2F Servers', '1F Kitchen/1F Cafeteria', '1F Control Room/1F Storage', 'B Tank/B Assembly']
+        'Nighthaven Labs': ['2F Command Center/2F Servers', '1F Kitchen/1F Cafeteria', '1F Control Room/1F Storage', 'B Tank/B Assembly'],
+        'UnknownMap': ['FIRST', 'SECOND', 'THIRD', 'FOURTH']
     }
 
 class RainbowMatch:
@@ -83,14 +84,14 @@ class RainbowMatch:
     
     def _getMap(self, map):
         if map is None:
-            return [None, ['FIRST', 'SECOND', 'THIRD', 'FOURTH']]
+            map = 'UnknownMap'
 
         maps = RainbowData.maps
 
         best_match, score = process.extractOne(map, maps.keys())
         if score > 70:
             return [best_match, maps[best_match]]
-        return [None, ['FIRST', 'SECOND', 'THIRD', 'FOURTH']]
+        return [None, maps['UnknownMap']]
 
     def _resetSites(self):
         """Resets the sites for the current map."""
@@ -214,7 +215,8 @@ class RainbowMatch:
             # The 1-indexed index of the current operator, negated if it is a defender
             "operators": [(attackers.index(op) + 1) if self.playingOnSide == "attack" else -(defenders.index(op) + 1) for op in playedOperators[:len(self.players)]],
             "backupOperators": playedOperators[len(self.players):],
-            "result": None
+            "result": None,
+            "playerStats": {}
         })
         return playedOperators, playedSite
 
@@ -282,11 +284,16 @@ class RainbowMatch:
         """Adds a player stat to the list of player stats for this match."""
         statTypes = ['interrogations', 'aces']
         if statType in statTypes:
-            self.playerStats.append({
-                "playerId": playerId,
-                "statType": statType
-            })
+            if self.rounds[-1]['playerStats'].get(statType) is None:
+                self.rounds[-1]['playerStats'][statType] = {}
+            if self.rounds[-1]['playerStats'][statType].get(str(playerId)) is None:
+                self.rounds[-1]['playerStats'][statType][str(playerId)] = 0
+            self.rounds[-1]['playerStats'][statType][str(playerId)] += 1
 
     def getPlayerStat(self, playerId, statType):
         """Returns the number of times a player has gotten a certain stat during the current match."""
-        return len([stat for stat in self.playerStats if stat['playerId'] == playerId and stat['statType'] == statType])
+        count = 0
+        for round in self.rounds:
+            if round['playerStats'].get(statType) and round['playerStats'][statType].get(str(playerId)):
+                count += round['playerStats'][statType][str(playerId)]
+        return count
