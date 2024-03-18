@@ -167,7 +167,9 @@ class MatchManagement(commands.Cog, name='Match Management'):
         discordMessage['messageContent']['statsBanner'] = ''
         discordMessage['messageContent']['actionPrompt'] = ''
         discordMessage['reactions'] = []
+
         await self.bot.sendMatchMessage(ctx, discordMessage, True)
+        await self.bot.archiveThread(ctx, discordMessage['matchMessageId'])
 
         self.bot.cursor.execute("DELETE FROM ongoing_matches WHERE server_id = ?", (ctx.guild.id,))
         self.bot.conn.commit()
@@ -205,6 +207,7 @@ class MatchManagement(commands.Cog, name='Match Management'):
             discordMessage['messageContent']['statsBanner'] = 'Match data has been **removed** from the database (additional player statistics such as interrogations are always saved).\n'
 
         await self.bot.sendMatchMessage(ctx, discordMessage)
+        await self.bot.archiveThread(ctx, discordMessage['matchMessageId'])
 
         self.bot.cursor.execute("DELETE FROM ongoing_matches WHERE server_id = ?", (ctx.guild.id,))
         self.bot.conn.commit()
