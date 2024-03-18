@@ -238,15 +238,17 @@ class Statistics(commands.Cog, name='Statistics'):
             for playerIndex, player in enumerate(match.players):
                 operator = self._getOperatorFromId(round['operators'][playerIndex])
                 message += f'\t{player["mention"]} played **{operator}**\n'
-                # If the player got a stat this round, add it to the message
-                for stat in match.playerStats:
-                    if stat['playerId'] == player['id'] and stat['round'] == roundIndex:
-                        if stat['statType'] == 'interrogations':
-                            message += f'\t\t**{player["mention"]} got interrogation**\n'
+                for statType, playerStatValues in round['playerStats'].items():
+                    if playerStatValues.get(str(player["id"])):
+                        if statType == 'aces':
+                            message += f"\t\t{player['mention']} **aced** the round!\n"
+                        elif statType == 'interrogations':
+                            message += f"\t\t{player['mention']} got **{playerStatValues[str(player['id'])]} interrogation{'s' if playerStatValues[str(player['id'])] > 1 else ''}**!\n"
+                        else:
+                            message += f"\t\t{statType.title()}: {playerStatValues[str(player['id'])]}\n"
             message += '\n'
         
         message += f'Match ID: {match.matchId}'
-        # TODO: Additional player statistics, with round attached
         return message
 
 async def setup(bot: RainbowBot):
