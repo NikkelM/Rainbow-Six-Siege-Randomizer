@@ -223,7 +223,9 @@ class Statistics(commands.Cog, name='Statistics'):
 
     def createMatchRecapStringFromMatch(self, match: RainbowMatch):
         """Creates a recap of all rounds played in the match."""
-        message = f'Started playing on {"**Attack**" if match.rounds[0]["site"] is None else "**Defense**"}.\n\n'
+        message = ''
+        message += f'Banned operators: {", ".join([self._getOperatorFromId(op) for op in match.bannedOperators])}\n'
+        message += f'Started playing on {"**Attack**" if match.rounds[0]["site"] is None else "**Defense**"}.\n\n'
         for roundIndex, round in enumerate(match.rounds):
             playedSite = f" on\n**{RainbowData.maps[match.map][round['site']]}**" if round['site'] is not None else ""
             message += f'{"**Won**" if round["result"] == 1 else "**Lost**"} round {roundIndex + 1}{playedSite}\n'
@@ -232,7 +234,6 @@ class Statistics(commands.Cog, name='Statistics'):
                 message += f'\t{player["mention"]} played {operator}\n'
         
         # TODO: Additional player statistics, with round attached
-        # TODO: Banned operators
         # TODO: Include new line for side swap, overtime
         return message
 
