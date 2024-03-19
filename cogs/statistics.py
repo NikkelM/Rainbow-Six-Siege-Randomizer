@@ -236,14 +236,15 @@ class Statistics(commands.Cog, name='Statistics'):
             message += f"{'**Won**' if round['result'] == 1 else '**Lost**'} round {roundIndex + 1}{playedSite}\n"
 
             for playerIndex, player in enumerate(match.players):
+                playerNameString = player['nick'] if player['nick'] is not None else player['global_name'] if player['global_name'] is not None else player['name'] if player['name'] is not None else player['mention']
                 operator = self._getOperatorFromId(round['operators'][playerIndex])
-                message += f'\t{player["mention"]} played **{operator}**\n'
+                message += f'\t**{playerNameString}** played **{operator}**\n'
                 for statType, playerStatValues in round['playerStats'].items():
                     if playerStatValues.get(str(player["id"])):
                         if statType == 'aces':
-                            message += f"\t\t{player['mention']} **aced** the round!\n"
+                            message += f"\t\t**{playerNameString} aced** the round!\n"
                         elif statType == 'interrogations':
-                            message += f"\t\t{player['mention']} got **{playerStatValues[str(player['id'])]} interrogation{'s' if playerStatValues[str(player['id'])] > 1 else ''}**!\n"
+                            message += f"\t\t**{playerNameString}** got **{playerStatValues[str(player['id'])]} interrogation{'s' if playerStatValues[str(player['id'])] > 1 else ''}**!\n"
                         else:
                             message += f"\t\t{statType.title()}: {playerStatValues[str(player['id'])]}\n"
             message += '\n'
