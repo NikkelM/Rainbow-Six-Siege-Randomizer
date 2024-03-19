@@ -351,6 +351,13 @@ class RainbowBot(commands.Bot):
         thread = await ctx.channel.create_thread(name=f"Match Recap: {match.map if match.map is not None else 'Unknown Map'} at {matchMessage.created_at.strftime('%H:%M')}", message=matchMessage)
         await thread.send(matchRecap)
 
+        # Remove the 'RandomSixBot started a thread' system message in the channel if it exists
+        recentMessages = [message async for message in ctx.channel.history(limit=2)]
+        for message in recentMessages:
+            if message.type == discord.MessageType.thread_created and message.author == bot.user:
+                await message.delete()
+                break
+
     async def archiveThread(self, ctx: commands.Context, threadId):
         """Archives a thread."""
         thread = ctx.channel.get_thread(threadId)
