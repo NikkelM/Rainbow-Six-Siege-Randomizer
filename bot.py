@@ -192,6 +192,12 @@ class RainbowBot(commands.Bot):
             print('Unknown reaction:', reaction.emoji)
             return
 
+    async def on_message(self, message: discord.Message):
+        if message.content.startswith('!') and message.channel.type in [discord.ChannelType.public_thread, discord.ChannelType.private_thread, discord.ChannelType.news_thread]:
+            await message.channel.send('You cannot use commands in threads, please try again in a text channel.')
+            return
+        await bot.process_commands(message)
+
     def resetDiscordMessage(self, serverId: int):
         self.cursor.execute("DELETE FROM ongoing_matches WHERE server_id = ?", (serverId,))
         self.conn.commit()
