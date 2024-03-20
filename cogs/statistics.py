@@ -71,9 +71,10 @@ class Statistics(commands.Cog, name='Statistics'):
             message = 'The "**!stats**" command allows you to query and view statistics for yourself, your server, or another user on this server.\n\n'
             message += 'Available *statisticTypes* are:\n'
             message += '**overall**: General statistics for a player, such as win/loss ratios for maps and operators.\n'
-            message += '**server**: The same as the **overall** statistic, but for matches played on the current server.\n'
+            message += '**server**: The same as the **overall** statistic, but for all matches played on the current server.\n'
             message += '\nIf no *statisticType* is given, the **overall** statistics for the mentioned player are displayed.\n'
-            message += 'If no player is mentioned, the message author\'s statistics are displayed.'
+            message += 'If no player is mentioned, the message author\'s statistics are displayed.\n'
+            message += '"**!stats help"** will show this message.'
         else:
             message = f'The statistic you wanted to view is unknown: {statisticType}. Use "**!stats help**" for usage information.'
 
@@ -116,6 +117,7 @@ class Statistics(commands.Cog, name='Statistics'):
                 WHERE matches.map = ? AND player_rounds.player_id = ?
             """, (map, player.id)).fetchall()
         else:
+            print(f'Unknown statType when querying player statistics: {statType}')
             return None
     
     def _getServerStatisticFromDatabase(self, server: discord.Guild, statType: str, additionalArguments: list = None):
@@ -146,6 +148,7 @@ class Statistics(commands.Cog, name='Statistics'):
                 WHERE matches.map = ? AND matches.server_id = ?
             """, (map, server.id)).fetchall()
         else:
+            print(f'Unknown statType when querying server statistics: {statType}')
             return None
 
     def _calculateWinLossRatio(self, maps: list):
