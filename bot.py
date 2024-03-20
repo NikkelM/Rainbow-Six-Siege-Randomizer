@@ -348,7 +348,7 @@ class RainbowBot(commands.Bot):
         self.cursor.execute("UPDATE ongoing_matches SET discord_message = ? WHERE server_id = ?", (discordMessage, serverId))
         self.conn.commit()
 
-    async def startThreadWithMessage(self, ctx: commands.Context, threadParentMessage: discord.Message, threadName: str) -> discord.Thread:
+    async def startThreadOnMessage(self, ctx: commands.Context, threadParentMessage: discord.Message, threadName: str) -> discord.Thread:
         """Starts a new thread on a message."""
         thread = await ctx.channel.create_thread(name=threadName, auto_archive_duration=60, message=threadParentMessage)
 
@@ -367,7 +367,7 @@ class RainbowBot(commands.Bot):
         matchRecap = f'## Match Recap: {match.map if match.map is not None else "Unknown Map"}\n\n'
         matchRecap += self.get_cog('Statistics').createMatchRecapStringFromMatch(match)
         
-        thread: discord.Thread = await self.startThreadWithMessage(matchMessage, f"Match Recap: {match.map if match.map is not None else 'Unknown Map'} at {matchMessage.created_at.strftime('%H:%M')}")
+        thread: discord.Thread = await self.startThreadOnMessage(matchMessage, f"Match Recap: {match.map if match.map is not None else 'Unknown Map'} at {matchMessage.created_at.strftime('%H:%M')}")
         await thread.send(matchRecap)
 
     async def archiveThread(self, ctx: commands.Context, threadId: int):

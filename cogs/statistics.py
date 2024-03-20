@@ -78,7 +78,7 @@ class Statistics(commands.Cog, name='Statistics'):
         else:
             message = f'The statistic you wanted to view is unknown: {statisticType}. Use "**!stats help**" for usage information.'
 
-        thread: discord.Thread = await self.bot.startThreadWithMessage(ctx, ctx.message, threadName)
+        thread: discord.Thread = await self.bot.startThreadOnMessage(ctx, ctx.message, threadName)
         await thread.send(message)
 
     def _getPlayerStatisticFromDatabase(self, player: discord.User, statType: str, additionalArguments: list = None):
