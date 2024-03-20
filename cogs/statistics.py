@@ -9,7 +9,7 @@ class Statistics(commands.Cog, name='Statistics'):
         self.bot = bot
 
     @commands.command(aliases=['stats', 'statistics'])
-    async def _stats(self, ctx: commands.Context, statisticType: str = None, player = None):
+    async def _stats(self, ctx: commands.Context, statisticType = None, player = None):
         """View a specific statistic for yourself or another user. Use **!stats help** for more information."""
         # No arguments given
         if statisticType is None:
@@ -22,18 +22,31 @@ class Statistics(commands.Cog, name='Statistics'):
         # Only a statisticType is given
         elif player is None:
             player = ctx.author
+        # Both are given, convert the player mention to a discord.User object 
+        elif player.startswith('<@') and player.endswith('>'):
+                player = ctx.message.mentions[0]
+        else:
+            return await ctx.send('Invalid usage of the **!stats** command. Use **!stats help** for more information.')
 
         if player not in ctx.guild.members:
             return await ctx.send(f'{player.mention} is not a member of this server, so their statistics cannot be viewed.')
         
-        target = player.mention
-        if statisticType == 'server':
+        target = None
+        threadName = f'Statistics'
+        
+        if statisticType == 'overall':
+            target = player.mention
+            threadName = f'Statistics for {player.nick if player.nick is not None else player.global_name if player.global_name is not None else player.name}'
+        elif statisticType == 'server':
             target = ctx.guild.name
+            threadName = f'Statistics for {ctx.guild.name}'
+        elif statisticType == 'help':
+            threadName = f'"!stats" command usage information'
 
-        message = 'Use "**!stats help**" for usage information.\n\n'
-        message += f'Here are the requested statistics for **{target}**:\n\n'
+        message = ''
         # Returns the player's Win/Loss ratio and additional statistics
         if statisticType == 'overall' or statisticType == 'server':
+            message += f'Here are the requested statistics for **{target}** (Use "**!stats help**" for more usage information):\n\n'
             if statisticType == 'overall':
                 maps = self._getPlayerStatisticFromDatabase(player, 'maps')
                 additionalStatistics = self._getPlayerStatisticFromDatabase(player, 'additionalStatistics')
@@ -58,13 +71,15 @@ class Statistics(commands.Cog, name='Statistics'):
             message = 'The "**!stats**" command allows you to query and view statistics for yourself, your server, or another user on this server.\n\n'
             message += 'Available *statisticTypes* are:\n'
             message += '**overall**: General statistics for a player, such as win/loss ratios for maps and operators.\n'
-            message += '**server**: The same as the **overall** statistic, but for matches played on the current server.\n'
+            message += '**server**: The same as the **overall** statistic, but for all matches played on the current server.\n'
             message += '\nIf no *statisticType* is given, the **overall** statistics for the mentioned player are displayed.\n'
-            message += 'If no player is mentioned, the message author\'s statistics are displayed.'
+            message += 'If no player is mentioned, the message author\'s statistics are displayed.\n'
+            message += '"**!stats help"** will show this message.'
         else:
             message = f'The statistic you wanted to view is unknown: {statisticType}. Use "**!stats help**" for usage information.'
 
-        await ctx.send(message)
+        thread: discord.Thread = await self.bot.startThreadOnMessage(ctx, ctx.message, threadName)
+        await thread.send(message)
 
     def _getPlayerStatisticFromDatabase(self, player: discord.User, statType: str, additionalArguments: list = None):
         """Gets all data related to the given player and statistic from the database."""
@@ -102,6 +117,7 @@ class Statistics(commands.Cog, name='Statistics'):
                 WHERE matches.map = ? AND player_rounds.player_id = ?
             """, (map, player.id)).fetchall()
         else:
+            print(f'Unknown statType when querying player statistics: {statType}')
             return None
     
     def _getServerStatisticFromDatabase(self, server: discord.Guild, statType: str, additionalArguments: list = None):
@@ -132,6 +148,7 @@ class Statistics(commands.Cog, name='Statistics'):
                 WHERE matches.map = ? AND matches.server_id = ?
             """, (map, server.id)).fetchall()
         else:
+            print(f'Unknown statType when querying server statistics: {statType}')
             return None
 
     def _calculateWinLossRatio(self, maps: list):
