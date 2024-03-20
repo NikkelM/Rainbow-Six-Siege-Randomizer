@@ -367,7 +367,7 @@ class RainbowBot(commands.Bot):
         matchRecap = f'## Match Recap: {match.map if match.map is not None else "Unknown Map"}\n\n'
         matchRecap += self.get_cog('Statistics').createMatchRecapStringFromMatch(match)
         
-        thread: discord.Thread = await self.startThreadOnMessage(matchMessage, f"Match Recap: {match.map if match.map is not None else 'Unknown Map'} at {matchMessage.created_at.strftime('%H:%M')}")
+        thread: discord.Thread = await self.startThreadOnMessage(ctx, matchMessage, f"Match Recap: {match.map if match.map is not None else 'Unknown Map'} at {matchMessage.created_at.strftime('%H:%M')}")
         await thread.send(matchRecap)
 
     async def archiveThread(self, ctx: commands.Context, threadId: int):
