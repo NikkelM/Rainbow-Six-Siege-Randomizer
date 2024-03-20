@@ -342,14 +342,9 @@ class RainbowBot(commands.Bot):
         self.cursor.execute("UPDATE ongoing_matches SET discord_message = ? WHERE server_id = ?", (discordMessage, serverId))
         self.conn.commit()
 
-    async def createMatchRecapThread(self, ctx: commands.Context, match: RainbowMatch, discordMessage: dict):
-        """Creates a new thread under the match message with statistics for the match."""
-        matchMessage = await ctx.channel.fetch_message(discordMessage['matchMessageId'])
-        matchRecap = f'## Match Recap: {match.map if match.map is not None else "Unknown Map"}\n\n'
-        matchRecap += self.get_cog('Statistics').createMatchRecapStringFromMatch(match)
-        
-        thread = await ctx.channel.create_thread(name=f"Match Recap: {match.map if match.map is not None else 'Unknown Map'} at {matchMessage.created_at.strftime('%H:%M')}", message=matchMessage)
-        await thread.send(matchRecap)
+    async def startThreadWithMessage(self, ctx: commands.Context, threadParentMessage: discord.Message, threadName: str) -> discord.Thread:
+        """Starts a new thread on a message."""
+        thread = await ctx.channel.create_thread(name=threadName, auto_archive_duration=60, message=threadParentMessage)
 
         # Remove the 'RandomSixBot started a thread' system message in the channel if it exists
         recentMessages = [message async for message in ctx.channel.history(limit=2)]
@@ -358,8 +353,19 @@ class RainbowBot(commands.Bot):
                 await message.delete()
                 break
 
-    async def archiveThread(self, ctx: commands.Context, threadId):
-        """Archives a thread."""
+        return thread
+
+    async def createMatchRecapThread(self, ctx: commands.Context, match: RainbowMatch, discordMessage: dict):
+        """Creates a new thread under the match message with statistics for the match."""
+        matchMessage = await ctx.channel.fetch_message(discordMessage['matchMessageId'])
+        matchRecap = f'## Match Recap: {match.map if match.map is not None else "Unknown Map"}\n\n'
+        matchRecap += self.get_cog('Statistics').createMatchRecapStringFromMatch(match)
+        
+        thread: discord.Thread = await self.startThreadWithMessage(matchMessage, f"Match Recap: {match.map if match.map is not None else 'Unknown Map'} at {matchMessage.created_at.strftime('%H:%M')}")
+        await thread.send(matchRecap)
+
+    async def archiveThread(self, ctx: commands.Context, threadId: int):
+        """Archives a thread if it exists and is not archived."""
         thread = ctx.channel.get_thread(threadId)
         if thread:
             await thread.edit(archived=True)
