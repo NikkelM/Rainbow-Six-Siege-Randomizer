@@ -81,6 +81,7 @@ class OngoingMatch(commands.Cog, name='Ongoing Match'):
             return
 
         if (match.currRound == 6 and match.scores["red"] == 3):
+            overtimeSide = overtimeSide.lower() if overtimeSide else None
             if not overtimeSide or overtimeSide not in ['attack', 'defense']:
                 discordMessage['messageContent']['actionPrompt'] = 'You must specify what side you start overtime on. Use "**!won attack**" ⚔️ or "**!won defense**" 🛡️.'
                 await self.bot.sendMatchMessage(ctx, discordMessage)
@@ -110,6 +111,7 @@ class OngoingMatch(commands.Cog, name='Ongoing Match'):
             return
 
         if (match.currRound == 6 and match.scores["blue"] == 3):
+            overtimeSide = overtimeSide.lower() if overtimeSide else None
             if not overtimeSide or overtimeSide not in ['attack', 'defense']:
                 discordMessage['messageContent']['actionPrompt'] = 'You must specify what side you start overtime on. Use "**!lost attack**" ⚔️ or "**!lost defense**" 🛡️.'
                 await self.bot.sendMatchMessage(ctx, discordMessage)
@@ -149,6 +151,7 @@ class OngoingMatch(commands.Cog, name='Ongoing Match'):
         else:
             player = await commands.MemberConverter().convert(ctx, player)
 
+        operator = operator.lower().capitalize()
         operatorMatch, score = process.extractOne(operator, validOperators)
         if score >= 75:
             operator = operatorMatch
@@ -221,6 +224,7 @@ class OngoingMatch(commands.Cog, name='Ongoing Match'):
         if ctx.message.id != discordMessage['matchMessageId'] or not discordMessage['matchMessageId']:
             await ctx.message.delete()
 
+        operators = [op.lower().capitalize() for op in operators]
         bans = ' '.join(operators)
         sanitizedBans = match.banOperators(bans, ban)
 
