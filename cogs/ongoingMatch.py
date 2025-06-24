@@ -37,6 +37,7 @@ class OngoingMatch(commands.Cog, name='Ongoing Match'):
         couldSetMap = match.setMap(mapName)
         if couldSetMap:
             discordMessage['messageContent']['playersBanner'] = f"Playing a match with {match.playersString}{' on **' + match.map + '**' if match.map else ''}.\n"
+            discordMessage['messageContent']['banMetadata'] = ''
 
             if match.currRound > 0 and match.playingOnSide == 'defense':
                 site = match.getCurrentSiteName()
@@ -46,10 +47,7 @@ class OngoingMatch(commands.Cog, name='Ongoing Match'):
             discordMessage['messageContent']['actionPrompt'] += f'**{mapName}** is not a valid map. Use "**!setMap map**" to try again.\n'
 
         if match.currRound == 0:
-            if not match.bannedOperators:
-                discordMessage['messageContent']['actionPrompt'] += 'Use "**!ban op1 op2...**", then "**!attack**" ⚔️ or "**!defense**" 🛡️ to start the match.'
-            else:
-                discordMessage['messageContent']['actionPrompt'] += 'Use "**!attack**" ⚔️ or "**!defense**" 🛡️ to start the match.'
+            discordMessage['messageContent']['actionPrompt'] += 'Use "**!attack**" ⚔️ or "**!defense**" 🛡️ to start the match.'
         else:
             discordMessage['messageContent']['actionPrompt'] += 'Use "**!won**" 🇼 or "**!lost**" 🇱 to continue.'
 
@@ -90,7 +88,10 @@ class OngoingMatch(commands.Cog, name='Ongoing Match'):
         if match.resolveRound('won', overtimeSide):
             self.bot.saveOngoingMatch(ctx, match)
             self.bot.saveDiscordMessage(ctx, discordMessage)
-            await self._playRound(ctx)
+            if match.isMatchInOvertime():
+                await self._playRound(ctx)
+            else:
+                await self._banPhase(ctx)
         else:
             self.bot.saveOngoingMatch(ctx, match)
             self.bot.saveDiscordMessage(ctx, discordMessage)
@@ -120,7 +121,10 @@ class OngoingMatch(commands.Cog, name='Ongoing Match'):
         if match.resolveRound('lost', overtimeSide):
             self.bot.saveOngoingMatch(ctx, match)
             self.bot.saveDiscordMessage(ctx, discordMessage)
-            await self._playRound(ctx)
+            if match.isMatchInOvertime():
+                await self._playRound(ctx)
+            else:
+                await self._banPhase(ctx)
         else:
             self.bot.saveOngoingMatch(ctx, match)
             self.bot.saveDiscordMessage(ctx, discordMessage)
@@ -226,30 +230,19 @@ class OngoingMatch(commands.Cog, name='Ongoing Match'):
 
         operators = [op.lower().capitalize() for op in operators]
         bans = ' '.join(operators)
-        sanitizedBans = match.banOperators(bans, ban)
+        sanitizedBans = match.banOperators(bans, "defense" if match.playingOnSide == "defense" else "attack", ban)
 
-        if match.bannedOperators == []:
-            discordMessage['messageContent']['banMetadata'] = 'No operators are banned in this match.\n'
+        discordMessage['messageContent']['banMetadata'] = ''
+        unrecognizedBans = [ban for ban in zip(sanitizedBans, operators) if ban[0] is None]
+        if len(unrecognizedBans) > 0:
+            discordMessage['messageContent']['banMetadata'] += f'You can\'t ban these operators for your current side:\n{", ".join([f"**{ban[1]}**" for ban in unrecognizedBans])}\n'
+        if len(sanitizedBans) > len(unrecognizedBans):
+            # At least one valid operator ban was made, so we continue
+            self.bot.saveOngoingMatch(ctx, match)
+            await self._playRound(ctx)
         else:
-            discordMessage['messageContent']['banMetadata'] = f'The following operators are banned in this match:\n{", ".join([f"**{op}**" for op in match.bannedOperators])}\n'
-            unrecognizedBans = [ban for ban in zip(sanitizedBans, operators) if ban[0] is None]
-            if len(unrecognizedBans) > 0:
-                if ban:
-                    discordMessage['messageContent']['banMetadata'] += f'The following operators were not recognized:\n{", ".join([f"**{ban[1]}**" for ban in unrecognizedBans])}\n'
-                else:
-                    discordMessage['messageContent']['banMetadata'] += f'The following operators were not recognized, or not banned:\n{", ".join([f"**{ban[1]}**" for ban in unrecognizedBans])}\n'
-
-        if match.currRound == 0:
-            discordMessage['messageContent']['actionPrompt'] = ''
-            if not match.map:
-                discordMessage['messageContent']['actionPrompt'] += 'Next, use "**!setMap map**" to set the map.\n'
-            discordMessage['messageContent']['actionPrompt'] += 'You can also "**!ban**" or "**!unban**" more operators.\n'
-            discordMessage['messageContent']['actionPrompt'] += 'Use "**!attack**" ⚔️ or "**!defense**" 🛡️ to start the match.'
-        else:
-            discordMessage['messageContent']['actionPrompt'] = 'Use "**!won**" 🇼 or "**!lost**" 🇱 to continue.'
-
-        self.bot.saveOngoingMatch(ctx, match)
-        await self.bot.sendMatchMessage(ctx, discordMessage)
+            # Otherwise, just print the message and wait for a proper ban
+            await self.bot.sendMatchMessage(ctx, discordMessage)
 
     async def _playMatch(self, ctx: commands.Context, side: str):
         match, discordMessage, canContinue = await self.bot.getMatchData(ctx)
@@ -275,16 +268,36 @@ class OngoingMatch(commands.Cog, name='Ongoing Match'):
 
         self.bot.saveOngoingMatch(ctx, match)
         self.bot.saveDiscordMessage(ctx, discordMessage)
-        await self._playRound(ctx)
+        await self._banPhase(ctx)
+
+    async def _banPhase(self, ctx: commands.Context):
+        match, discordMessage, canContinue = await self.bot.getMatchData(ctx)
+        if not canContinue:
+            return
+        
+        discordMessage['messageContent']['playersBanner'] = f"Playing a match with {match.playersString}{' on **' + match.map + '**' if match.map else ''}.\n"
+        discordMessage['messageContent']['matchScore'] = f'The score is **{match.scores["blue"]}**:**{match.scores["red"]}**, we are playing on **{match.playingOnSide}**.\n'
+        opBan = match.getNewOperatorBan()
+        discordMessage['messageContent']['roundMetadata'] = f'Ban **{opBan}** from being played by your opponents.\n'
+        discordMessage['messageContent']['roundMetadata'] += f"Then, use **!ban** to ban the operator your opponents banned."
+        discordMessage['messageContent']['roundLineup'] = ''
+        discordMessage['messageContent']['banMetadata'] = ''
+        discordMessage['messageContent']['actionPrompt'] = ''
+        discordMessage['reactions'] = []
+        await self.bot.sendMatchMessage(ctx, discordMessage)
 
     async def _playRound(self, ctx: commands.Context):
         match, discordMessage, canContinue = await self.bot.getMatchData(ctx)
         if not canContinue:
             return
 
+        bannedOperators = list(reversed(match.getBannedOperators("defense" if match.playingOnSide == "defense" else "attack")))
         discordMessage['messageContent']['playersBanner'] = f"Playing a match with {match.playersString}{' on **' + match.map + '**' if match.map else ''}.\n"
         discordMessage['messageContent']['matchScore'] = f'The score is **{match.scores["blue"]}**:**{match.scores["red"]}**, we are playing on **{match.playingOnSide}**.\n'
         discordMessage['messageContent']['banMetadata'] = ''
+        if len(bannedOperators) > 0:
+            discordMessage['messageContent']['banMetadata'] = f'Your opponents have banned the following operators:\n'
+            discordMessage['messageContent']['banMetadata'] += f'**{", ".join(bannedOperators)}**\n'
         discordMessage['messageContent']['statsBanner'] = ''
         discordMessage['messageContent']['roundMetadata'] = f'Here is your lineup for round {match.currRound}:'
 
@@ -320,7 +333,7 @@ class OngoingMatch(commands.Cog, name='Ongoing Match'):
         discordMessage['messageContent']['playersBanner'] = f"Finished a match with {match.playersString}{' on **' + match.map + '**' if match.map else ''}.\n"
         discordMessage['messageContent']['matchScore'] = f'The match is over! The final score was **{match.scores["blue"]}**:**{match.scores["red"]}**.\n'
         discordMessage['messageContent']['statsBanner'] = ''
-        discordMessage['messageContent']['actionPrompt'] = 'Use "**!another**" 👍 for a new match with the same players, "**!another here**" 🎤 for a new match in your voice channel, or "**!goodnight (delete)**" 👎 (✋) to end the match (and exclude it from statistics).'
+        discordMessage['messageContent']['actionPrompt'] = 'Use "**!another**" 👍 for a new match with the same players, "**!another here**" 🎤 for a new match in your voice channel, or "**!goodbye [delete]**" 👎 (✋) to end the match (and exclude it from statistics).'
         discordMessage['reactions'] = ['👍', '🎤', '👎', '✋']
         self.bot.saveOngoingMatch(ctx, match)
         self.bot.saveCompletedMatch(ctx, match)
