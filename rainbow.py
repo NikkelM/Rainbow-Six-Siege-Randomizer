@@ -62,6 +62,7 @@ class RainbowMatch:
             self.players = existingMatch['players']
             self.playersString = existingMatch['playersString']
             self.playerStats = existingMatch['playerStats']
+            self.isOvertime = existingMatch['isOvertime']
         else:
             self.matchId = str(uuid.uuid4())
             self.bannedOperators = []
@@ -74,6 +75,7 @@ class RainbowMatch:
             self.players = []
             self.playersString = ''
             self.playerStats = []
+            self.isOvertime = False
 
     def _getOperators(self):
         """Returns a dictionary with the list of attacker and defender operators."""
@@ -144,14 +146,14 @@ class RainbowMatch:
         mapStrings = ["FIRST", "SECOND", "THIRD", "FOURTH", "FIFTH"]
         return random.sample(mapStrings, k=1)[0]
 
-    def getOperatorBanChoices(self):
-        """Returns a choice of operators that should be banned, two for each side (main and backup)."""
+    def getNewOperatorBan(self):
+        """Returns an operator that should be banned in the current round."""
         attackers, defenders = self._getOperators().values()
-        attBans = random.sample(attackers, k=2)
-        defBans = random.sample(defenders, k=2)
-        return attBans, defBans
+        availableOperators = [op for op in (attackers if self.playingOnSide == "defense" else defenders) if op not in self.bannedOperators]
+        bannedOperator = random.sample(availableOperators, k=1)[0]
+        return bannedOperator
 
-    def banOperators(self, inputString, ban=True):
+    def banOperators(self, inputString, side, ban=True):
         """Removes the given operators from the list of available operators, and returns the sanitized list of operators."""
         attackers, defenders = self._getOperators().values()
         input_names = re.split(r'\W+\s*', inputString)
@@ -162,7 +164,7 @@ class RainbowMatch:
         sanitized_names = []
         for name in input_names:
             match, score = process.extractOne(name, attackers + defenders) if ban else process.extractOne(name, self.bannedOperators)
-            if score >= 75:
+            if score >= 75 and ((side == "attack" and match in attackers) or (side == "defense" and match in defenders)):
                 sanitized_names.append(match)
             else:
                 sanitized_names.append(None)
@@ -176,8 +178,17 @@ class RainbowMatch:
             else:
                 if op in self.bannedOperators:
                     self.bannedOperators.remove(op)
-
+        
+        self.bannedOperators = list(set(self.bannedOperators))
         return sanitized_names
+
+    def getBannedOperators(self, side):
+        """Returns the list of banned operators for the given side."""
+        if side == "attack":
+            return [op for op in self.bannedOperators if op in RainbowData.attackers]
+        elif side == "defense":
+            return [op for op in self.bannedOperators if op in RainbowData.defenders]
+        return []
     
     def swapOperator(self, player, newOperator):
         """Swaps the operator a given player is playing in the current round. The player and new operator are assumed to have been validated already."""
@@ -260,6 +271,7 @@ class RainbowMatch:
         if self.scores["blue"] == 3 and self.scores["red"] == 3:
             self.playingOnSide = overtimeSide
             self.sites = self._resetSites()
+            self.isOvertime = True
         
         if self.isMatchFinished():
             return False
@@ -279,6 +291,10 @@ class RainbowMatch:
         if self.scores["blue"] == 5 or self.scores["red"] == 5:
             return True
         return False
+
+    def isMatchInOvertime(self):
+        """Returns True if the match is in overtime."""
+        return self.isOvertime
 
     def addPlayerStat(self, playerId, statType):
         """Adds a player stat to the list of player stats for this match."""
