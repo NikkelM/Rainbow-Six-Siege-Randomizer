@@ -229,13 +229,20 @@ class OngoingMatch(commands.Cog, name='Ongoing Match'):
             await ctx.message.delete()
 
         operators = [op.lower().capitalize() for op in operators]
+
+        if operators == ['None']:
+            # No bans to process, just continue
+            self.bot.saveOngoingMatch(ctx, match)
+            await self._playRound(ctx)
+            return
+
         bans = ' '.join(operators)
         sanitizedBans = match.banOperators(bans, "defense" if match.playingOnSide == "defense" else "attack", ban)
 
         discordMessage['messageContent']['banMetadata'] = ''
         unrecognizedBans = [ban for ban in zip(sanitizedBans, operators) if ban[0] is None]
         if len(unrecognizedBans) > 0:
-            discordMessage['messageContent']['banMetadata'] += f'You can\'t ban these operators for your current side:\n{", ".join([f"**{ban[1]}**" for ban in unrecognizedBans])}\n'
+            discordMessage['messageContent']['banMetadata'] += f'You can\'t ban these operators for your current side:\n{", ".join([f"**{ban[1]}**" for ban in unrecognizedBans])} (**!ban None** to skip banning)\n'
         if len(sanitizedBans) > len(unrecognizedBans):
             # At least one valid operator ban was made, so we continue
             self.bot.saveOngoingMatch(ctx, match)
@@ -279,7 +286,7 @@ class OngoingMatch(commands.Cog, name='Ongoing Match'):
         discordMessage['messageContent']['matchScore'] = f'The score is **{match.scores["blue"]}**:**{match.scores["red"]}**, we are playing on **{match.playingOnSide}**.\n'
         opBan = match.getNewOperatorBan()
         discordMessage['messageContent']['roundMetadata'] = f'Ban **{opBan}** from being played by your opponents.\n'
-        discordMessage['messageContent']['roundMetadata'] += f"Then, use **!ban** to ban the operator your opponents banned."
+        discordMessage['messageContent']['roundMetadata'] += f"Then, use **!ban** to ban the operator your opponents banned. (**!ban None** to skip banning)\n"
         discordMessage['messageContent']['roundLineup'] = ''
         discordMessage['messageContent']['banMetadata'] = ''
         discordMessage['messageContent']['actionPrompt'] = ''
