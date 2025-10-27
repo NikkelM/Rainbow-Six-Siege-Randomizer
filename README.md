@@ -25,7 +25,7 @@ Commands to interact with an ongoing match, such as banning operators or playing
 | Command | Argument | Description |
 | ------- | -------- | ----------- |
 | `!setMap`, `!map` | A valid `map` | Sets the map for the match. This will influence the sites displayed for defensive rounds. Use **!setMap map** to set the map. A map can be set at any point in the match. |
-| `!ban` | List of operator names | Bans operators from the match. Use **!ban op1 op2...** to ban the mentioned operators from the match. You can ban as many operators as you like. |
+| `!ban` | List of operator names | Bans operators from the match. Use **!ban op1 op2...** to ban the mentioned operators from the match. You can ban as many operators as you like. Use **!ban None** to not ban any operator for a round. |
 | `!unban` | List of operator names | Unbans operators from the match. Use **!unban op1 op2...** to unban the mentioned operators from the match. |
 | `!attack`, `!startAttack`, ⚔️ | | Starts the match on attack. |
 | `!defense`, `!startDefense`, `!defend`, 🛡️ | | Starts the match on defense. |
