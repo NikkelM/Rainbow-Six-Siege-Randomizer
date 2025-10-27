@@ -17,7 +17,7 @@ class RainbowData:
         "Sentry", "Smoke", "Mute", "Castle", "Pulse", "Doc", "Rook", "Kapkan", "Tachanka", "Jäger", "Bandit",
         "Frost", "Valkyrie", "Caveira", "Echo", "Mira", "Lesion", "Ela", "Vigil", "Alibi", "Maestro",
         "Clash", "Kaid", "Mozzie", "Warden", "Goyo", "Wamai", "Oryx", "Melusi", "Aruni", "Thunderbird",
-        "Thorn", "Azami", "Solis", "Fenrir", "Tubarão", "Skopós"
+        "Thorn", "Azami", "Solis", "Fenrir", "Tubarão", "Skopós", "Denari"
     ]
 
     maps = {
